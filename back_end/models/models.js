@@ -1,0 +1,31 @@
+const { User,HealthcareProvider,Patient,Admin } = require("./user")
+
+module.exports={
+    User,
+    HealthcareProvider,
+    Patient,
+    Admin,
+    Appointment : require('./appointment'),
+    Conversation : require('./conversation'),
+    EmergencyContact : require('./emergency _contact'),
+    HealthMetric : require('./healthcareMetric'),
+    Message:require('./message'),
+    Prescription:require('./prescription'),
+    SymptomChecker:require('./symptomeCheck'),
+    Notification : require('./notififcation'),
+    Allergy : require('./allergy'),
+    Article:require('./article'),
+    FeedBack : require('./feedback'),
+    Diseases : require('./diseases'),
+    Radiographies : require('./radiographies'),
+    Rating : require('./rating'),
+    Speciality : require('./speciality'),
+    Surgery :require ('./surgery'),
+    Symptom:require('./symptom'),
+    Availability:require('./availability'),
+    Experience:require('./experience'),
+    Education:require('./education'),
+    FeedbackResponse:require('./feedback_response'),
+    Labresult:require('./labresult'),
+    Metric : require('./healthmetricname')
+}

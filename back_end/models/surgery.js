@@ -1,0 +1,38 @@
+const mongoose = require('mongoose');
+
+const surgerySchema = new mongoose.Schema({
+  patient: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Patient',
+    required: true,
+  },
+  provider: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'HealthcareProvider',
+    required: true,
+  },
+  type:{
+    type: String,
+    required: true,
+  },
+  date: {
+    type: Date,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  complications: {
+    type: String,
+  },
+  files:[{
+    id: String, 
+    url: String, 
+  }],
+  sharedwith : [{type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false }]
+});
+
+const Surgerie = mongoose.model('Surgerie', surgerySchema);
+
+module.exports = Surgerie;

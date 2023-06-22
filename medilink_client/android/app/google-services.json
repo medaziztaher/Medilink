@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "81877663865",
+    "project_id": "flutter-login-app-c06f6",
+    "storage_bucket": "flutter-login-app-c06f6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:81877663865:android:d5c385083b2debb63c54a8",
+        "android_client_info": {
+          "package_name": "com.example.medilink_admin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "81877663865-c7s9fqjddiu5t106klpvtiu3rfs7ltur.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8CJ2EpBFPANJupkANi1Fd0m5CXgJAVSQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "81877663865-c7s9fqjddiu5t106klpvtiu3rfs7ltur.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "81877663865-q4ejopsdi6knsmsrks1mp448f0o43f88.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.medilinkFront"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:81877663865:android:d4753a4774614bc73c54a8",
+        "android_client_info": {
+          "package_name": "com.example.medilink_client"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "81877663865-c7s9fqjddiu5t106klpvtiu3rfs7ltur.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8CJ2EpBFPANJupkANi1Fd0m5CXgJAVSQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "81877663865-c7s9fqjddiu5t106klpvtiu3rfs7ltur.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "81877663865-q4ejopsdi6knsmsrks1mp448f0o43f88.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.medilinkFront"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
