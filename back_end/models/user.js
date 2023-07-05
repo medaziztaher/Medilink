@@ -53,6 +53,10 @@ const UserSchema = new mongoose.Schema({
     connected: {
         type: Boolean,
         default: false,
+    },
+    resetCode: {
+        type: String,
+        required : false
     }
 },
     options)
@@ -150,7 +154,6 @@ const healthcareProviderSchema = new mongoose.Schema({
         ref: 'Appointment'
     }],
     buildingpictures: [{
-        id: String,
         url: String,
     }],
     verifciation: {
@@ -174,7 +177,7 @@ const patientSchema = new mongoose.Schema({
         maxlength: 20,
     },
     dateofbirth: {
-        type: String,
+        type: Date,
         required: false,
     },
     civilstate: {

@@ -38,6 +38,7 @@ class Auth extends GetxController {
     try {
       await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
+      print(firebaseUser.value);
       if (firebaseUser.value != null) {
         final response = await http.post(
           Uri.parse(signup),

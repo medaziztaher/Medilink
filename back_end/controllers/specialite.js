@@ -17,10 +17,10 @@ const getSpeciality = async (req, res) => {
 
 const createSpeciality = async (req, res) => {
   try {
-    console.log(req.body)
+    
     const nom = req.body.speciality;
     const speciality = await db.Speciality.create({ nom });
-    console.log(speciality);
+    
     res.status(201).json({ message: 'Speciality created successfully', data: speciality });
   } catch (error) {
     console.error(error);

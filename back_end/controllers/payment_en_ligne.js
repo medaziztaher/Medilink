@@ -3,64 +3,62 @@ require("dotenv").config();
 const axios = require("axios");
 const linkapi = process.env.LINK_API;
 const createPayment = async (req, res) => {
-    const { doctorId, patientId, appointmentId } = req.body;
-    try {
-      let doctor = await db.User.findById(doctorId);
-      let patient = await db.User.findById(patientId);
-      let appointment = await db.Appointment.findById(appointmentId);
-      if (!doctor || !patient || !appointment) {
-        return res.status(400).json({ error: "required body" });
-      }
-      console.log(
-        process.env.PAYMENT_WALLET_ID,
-        process.env.LINK_PAYMENT_API,
-        process.env.PAYMENT_API_KEY
-      );
-      const cost = Number(doctor.appointmentprice);
-      console.log(cost);
-      const paymentData = {
-        receiverWalletId: process.env.PAYMENT_WALLET_ID,
-        token: "TND",
-        amount:cost* 1000,
-        type: "immediate",
-        description: "payment description",
-        lifespan: 10,
-        feesIncluded: true,
-        firstName: "mohamed aziz",
-        lastName: "taher",
-        phoneNumber: "50335902",
-        email: "mouhamedaziztaher0@gmail.com",
-        orderId: "12345678",
-        webhook: `${linkapi}/api/payment/notification_payment?patientId=${encodeURIComponent(
-          patientId
-        )}&doctorId=${encodeURIComponent(
-          doctorId
-        )}&appointmentId=${encodeURIComponent(appointmentId)}`,
-        silentWebhook: false,
-        successUrl: `${linkapi}/api/payment/paymentsuccess`,
-        failUrl: `${linkapi}/api/payment/paymentfailure`,
-        checkoutForm: true,
-        acceptedPaymentMethods: ["bank_card", "e-DINAR", "flouci"],
-      };
-      const { data } = await axios.post(
-        `${process.env.LINK_PAYMENT_API}/init-payment`,
-        paymentData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": process.env.PAYMENT_API_KEY,
-          },
-        }
-      );
-      res.send(data);
-    } catch (e) {
-        return res.status(400).json({ error: e });
-      console.log(e);
+  const { doctorId, patientId, appointmentId } = req.body;
+  try {
+    let doctor = await db.User.findById(doctorId);
+    let patient = await db.User.findById(patientId);
+    let appointment = await db.Appointment.findById(appointmentId);
+    if (!doctor || !patient || !appointment) {
+      return res.status(400).json({ error: "required body" });
     }
-  };
+    console.log(
+      process.env.PAYMENT_WALLET_ID,
+      process.env.LINK_PAYMENT_API,
+      process.env.PAYMENT_API_KEY
+    );
+    const cost = Number(doctor.appointmentprice);
+    const paymentData = {
+      receiverWalletId: process.env.PAYMENT_WALLET_ID,
+      token: "TND",
+      amount: cost * 1000,
+      type: "immediate",
+      description: "payment description",
+      lifespan: 10,
+      feesIncluded: true,
+      firstName: "mohamed aziz",
+      lastName: "taher",
+      phoneNumber: "50335902",
+      email: "mouhamedaziztaher0@gmail.com",
+      orderId: "12345678",
+      webhook: `${linkapi}/api/payment/notification_payment?patientId=${encodeURIComponent(
+        patientId
+      )}&doctorId=${encodeURIComponent(
+        doctorId
+      )}&appointmentId=${encodeURIComponent(appointmentId)}`,
+      silentWebhook: false,
+      successUrl: `${linkapi}/api/payment/paymentsuccess`,
+      failUrl: `${linkapi}/api/payment/paymentfailure`,
+      checkoutForm: true,
+      acceptedPaymentMethods: ["bank_card", "e-DINAR", "flouci"],
+    };
+    const { data } = await axios.post(
+      `${process.env.LINK_PAYMENT_API}/init-payment`,
+      paymentData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.PAYMENT_API_KEY,
+        },
+      }
+    );
+    res.send(data);
+  } catch (e) {
+    return res.status(400).json({ error: e });
+  }
+};
 const paymentsuccess = async (req, res) => {
 
-    res.send(`
+  res.send(`
 <html>
 <head>
   <style>
@@ -271,7 +269,7 @@ const paymentsuccess = async (req, res) => {
 }
 
 const paymentfailure = async (req, res) => {
-    res.send(`
+  res.send(`
     <html>
       <head>
         <style>
@@ -482,41 +480,44 @@ const paymentfailure = async (req, res) => {
 }
 
 const notification_payment = async (req, res) => {
-    try {
-        const paymentRef = req.query.payment_ref;
-        const url = `${process.env.LINK_PAYMENT_API}/${paymentRef}`;
-        const response = await axios.get(url, {
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
+  try {
+    const paymentRef = req.query.payment_ref;
+    const url = `${process.env.LINK_PAYMENT_API}/${paymentRef}`;
+    const response = await axios.get(url, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-        const paymentStatus = response.data.payment.transactions[0].status;
-        if (paymentStatus !== "success") {
-            return res.redirect(`${linkapi}/api/payment/paymentfailure`);
-        }
-        const {
-            appointmentId,
-            patientId,
-            doctorId
-        } = req.query;
-
-        const appointment = await db.Appointment.findById(appointmentId);
-
-        appointment.payed = true
-        await appointment.save()
-        res.redirect(`${linkapi}/api/payment/paymentsuccess`);
-
-    } catch (e) {
-        return res.redirect(`${linkapi}/api/payment/paymentfailure`);
-        connsole.log(e)
+    const paymentStatus = response.data.payment.transactions[0].status;
+    if (paymentStatus !== "success") {
+      return res.redirect(`${linkapi}/api/payment/paymentfailure`);
     }
+    const {
+      appointmentId,
+      patientId,
+      doctorId
+    } = req.query;
+
+    const appointment = await db.Appointment.findByIdAndUpdate(
+      { _id: appointmentId },
+      { $set: { payed: true } },
+      { new: true });
+
+    await appointment.save()
+    res.redirect(`${linkapi}/api/payment/paymentsuccess`);
+
+  } catch (e) {
+    console.log(e)
+    return res.redirect(`${linkapi}/api/payment/paymentfailure`);
+
+  }
 }
 const payment = {
-    createPayment,
-    paymentsuccess,
-    paymentfailure,
-    notification_payment
+  createPayment,
+  paymentsuccess,
+  paymentfailure,
+  notification_payment
 }
 
 module.exports = payment

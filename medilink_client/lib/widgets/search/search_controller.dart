@@ -27,38 +27,37 @@ class SearchController extends GetxController {
   void clearSearchResults() {
     searchResults.clear();
   }
- Future<void> searchUsers() async {
-  isLoading.value = true;
-  errorMessage.value = '';
 
-  Map<String, dynamic> requestData = {
-    'search': username,
-  };
+  Future<void> searchUsers() async {
+    isLoading.value = true;
+    errorMessage.value = '';
 
-  try {
-    final response = await networkHandler.post(searchpath, requestData);
-    if (response.statusCode == 200) {
-      print(response.statusCode);
-      if (response.body != null) {
-        List<dynamic> responseData = json.decode(response.body);
-        if (responseData != null && responseData is List) {
-          List<User> users = responseData.map((item) => User.fromJson(item)).toList();
-          searchResults.assignAll(users);
-        } else {
-          errorMessage.value = 'Invalid response data';
-        }
+    Map<String, dynamic> requestData = {
+      'search': username,
+    };
+
+    try {
+      final response = await networkHandler.post(searchpath, requestData);
+      print("Server Response :${response.body}");
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        print("Response Data: $responseData");
+
+        final data = responseData['date'] as List<dynamic>;
+        final user =
+            data.map((item) => User.fromJson(item)).toList(growable: false);
+        print("User List: $user");
+        searchResults.value = user;
       } else {
-        errorMessage.value = 'No user found';
+        final responseData = json.decode(response.body);
+        final message = responseData['message'];
+        errorMessage.value = message;
       }
-      username = '';
-    } else if (response.statusCode == 201) {
-      errorMessage.value = 'No user found';
+    } catch (e) {
+      print('Error: ${e.toString()}');
+      errorMessage.value = 'Error: ${e.toString()}';
+    } finally {
+      isLoading.value = false;
     }
-  } catch (e) {
-    print('Error: ${e.toString()}');
-    errorMessage.value = 'Error: ${e.toString()}';
-  } finally {
-    isLoading.value = false;
   }
-}
 }

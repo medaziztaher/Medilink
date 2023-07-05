@@ -30,7 +30,7 @@ class Body extends StatelessWidget {
                 SizedBox(height: SizeConfig.screenHeight * 0.03),
                 const SignUp(),
                 SizedBox(height: SizeConfig.screenHeight * 0.03),
-                Row(
+                /*Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SocialCard(
@@ -42,7 +42,7 @@ class Body extends StatelessWidget {
                       press: () {},
                     ),
                   ],
-                ),
+                ),*/
                 SizedBox(height: getProportionateScreenHeight(20)),
                 Text(
                   'kconditions'.tr,

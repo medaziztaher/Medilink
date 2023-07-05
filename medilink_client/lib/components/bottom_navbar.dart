@@ -6,7 +6,8 @@ import 'package:medilink_client/widgets/chat/chat_screen.dart';
 import '../utils/constatnts.dart';
 import '../utils/enum.dart';
 import '../widgets/home/home_screen.dart';
-import '../widgets/search/search_screen.dart';
+import '../widgets/profil/profile_screen.dart';
+import '../widgets/schedule/schedule_screen.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   const CustomBottomNavBar({
@@ -52,15 +53,6 @@ class CustomBottomNavBar extends StatelessWidget {
                 },
               ),
               IconButton(
-                icon: Icon(CupertinoIcons.search,
-                    color: MenuState.search == selectedMenu
-                        ? kPrimaryColor
-                        : inActiveIconColor),
-                onPressed: () {
-                  Get.to(() => SearchScreen());
-                },
-              ),
-              IconButton(
                 icon: Icon(CupertinoIcons.chat_bubble_text_fill,
                     color: MenuState.messenger == selectedMenu
                         ? kPrimaryColor
@@ -75,27 +67,9 @@ class CustomBottomNavBar extends StatelessWidget {
                         ? kPrimaryColor
                         : inActiveIconColor),
                 onPressed: () {
-                  // Get.to(const AppointmentPage());
+                  Get.to(() => ScheduleScreen());
                 },
               ),
-              IconButton(
-                  icon: Icon(
-                    Icons.folder,
-                    color: MenuState.rapports == selectedMenu
-                        ? kPrimaryColor
-                        : inActiveIconColor,
-                  ),
-                  onPressed: () {}),
-              IconButton(
-                  icon: Icon(
-                    Icons.notifications,
-                    color: MenuState.notifications == selectedMenu
-                        ? kPrimaryColor
-                        : inActiveIconColor,
-                  ),
-                  onPressed: () {}
-                  /*Navigator.pushNamed(context, ProfileScreen.routeName),*/
-                  ),
             ],
           )),
     );

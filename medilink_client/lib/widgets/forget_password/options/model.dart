@@ -35,12 +35,12 @@ class Forgetpasswordscreen {
                     },
                   ),
                   const SizedBox(height: 20),
-                  ForgetPasswordbtn(
+                  /*ForgetPasswordbtn(
                     icon: Icons.mobile_friendly_rounded,
                     title: "kphonenumber".tr,
                     subtitle: "kResetViaPhone".tr,
                     onTap: () {},
-                  ),
+                  ),*/
                 ],
               ),
             ));

@@ -7,18 +7,38 @@ const getPatients = async (req, res) => {
     const healthcareProvider = await db.HealthcareProvider.findById(req.user.id);
 
     if (!healthcareProvider) {
-      return res.status(404).json({ message: "Healthcare provider not found" });
+      return res.status(404).json({status:false, message: "Healthcare provider not found" });
     }
 
     const patientsIds = healthcareProvider.patients
       .filter((p) => p.status === "Approved")
       .map((p) => p.patientId);
     const patients = await db.Patient.find({ _id: patientsIds });
-    console.log(patients)
+
     res.status(200).json({ status: true, data: patients });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "An error occurred while fetching patients" });
+    res.status(500).json({status:false, message: "An error occurred while fetching patients" });
+  }
+};
+const getPendingPatients = async (req, res) => {
+  try {
+    console.log(req.user.id)
+    const healthcareProvider = await db.HealthcareProvider.findById(req.user.id);
+
+    if (!healthcareProvider) {
+      return res.status(404).json({status: false, message: "Healthcare provider not found" });
+    }
+
+    const patientsIds = healthcareProvider.patients
+      .filter((p) => p.status === "Pending")
+      .map((p) => p.patientId);
+    const patients = await db.Patient.find({ _id: patientsIds });
+
+    res.status(200).json({ status: true, data: patients });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({status :false, message: "An error occurred while fetching patients" });
   }
 };
 
@@ -35,7 +55,7 @@ const getProviderRatingsAndReviews = async (req, res) => {
     const ratingsAndReviews = provider.ratings;
     return res.status(200).json({ data: ratingsAndReviews });
   } catch (error) {
-    console.log(error.message);
+  
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -309,6 +329,7 @@ const geteducation = async (req, res) => {
 
 const provider = {
   getPatients,
+  getPendingPatients,
   getProviderRatingsAndReviews,
   setavailibility,
   seteducation,

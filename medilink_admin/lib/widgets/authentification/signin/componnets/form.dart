@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-
 import '../../../../utils/constatnts.dart';
 import '../../../../utils/default_button.dart';
 import '../../../../utils/form_error.dart';
 import '../../../../utils/size_config.dart';
 import '../signin_controller.dart';
-
-
 
 class SignIn extends StatelessWidget {
   const SignIn({Key? key}) : super(key: key);
@@ -35,18 +32,8 @@ class SignIn extends StatelessWidget {
                       controller.toggleRememberMe();
                     },
                   ),
-                  Text("krememberme".tr),
+                  Text("Remember Me"),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      //Forgetpasswordscreen.buildshowModelBottomSheet(context);
-                    },
-                    child: Text(
-                      "kforgetpassword".tr,
-                      style:
-                          const TextStyle(decoration: TextDecoration.underline),
-                    ),
-                  )
                 ],
               ),
               FormError(errors: controller.errors),
@@ -54,7 +41,7 @@ class SignIn extends StatelessWidget {
               Obx(() {
                 if (controller.isLoading.value == false) {
                   return DefaultButton(
-                    text: "kbutton1".tr,
+                    text: "continue",
                     press: () async {
                       controller.submitForm();
                     },
@@ -83,8 +70,8 @@ TextFormField buildEmailFormField(SignInController controller) {
     },
     controller: controller.emailController,
     decoration: InputDecoration(
-      labelText: "kemail".tr,
-      hintText: "kemailhint".tr,
+      labelText: "Email",
+      hintText: "Entre votre email",
       floatingLabelBehavior: FloatingLabelBehavior.always,
       suffixIcon: const Icon(Icons.email),
     ),
@@ -103,11 +90,10 @@ TextFormField buildPasswordFormField(SignInController controller) {
     },
     controller: controller.passwordController,
     decoration: InputDecoration(
-      labelText: "kpassword".tr,
-      hintText: "kpasswordhint".tr,
+      labelText: "Password".tr,
+      hintText: "enter votre password".tr,
       floatingLabelBehavior: FloatingLabelBehavior.always,
       suffixIcon: const Icon(Icons.vpn_key),
     ),
   );
 }
-

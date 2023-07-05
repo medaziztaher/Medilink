@@ -1,4 +1,4 @@
-
+import 'package:intl/intl.dart';
 
 class Allergy {
   String? id;
@@ -22,12 +22,17 @@ class Allergy {
   });
 
   factory Allergy.fromJson(Map<String, dynamic> json) {
+    String? formattedDate;
+    if (json['yearOfDiscovery'] != null) {
+      DateTime date = DateTime.parse(json['yearOfDiscovery']);
+      formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    }
     return Allergy(
       id: json['_id'] as String?,
       patient: json['patient'] as String?,
       type: json['type'] as String?,
       name: json['name'] as String?,
-      yearOfDiscovery: json['yearOfDiscovery'] as String?,
+      yearOfDiscovery: formattedDate,
       followupStatus: json['followupStatus'] as String?,
       familyHistory: json['familyHistory'] as bool?,
       notes: json['notes'] as String?,
@@ -40,7 +45,11 @@ class Allergy {
     if (patient != null) data['patient'] = patient;
     if (type != null) data['type'] = type;
     if (name != null) data['name'] = name;
-    if (yearOfDiscovery != null) data['yearOfDiscovery'] = yearOfDiscovery;
+    if (yearOfDiscovery != null) {
+      DateTime date = DateTime.parse(yearOfDiscovery!);
+      String formattedDate = DateFormat('yyyy-MM-dd').format(date);
+      data['yearOfDiscovery'] = formattedDate;
+    }
     if (followupStatus != null) data['followupStatus'] = followupStatus;
     if (familyHistory != null) data['familyHistory'] = familyHistory;
     if (notes != null) data['notes'] = notes;

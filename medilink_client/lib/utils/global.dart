@@ -1,7 +1,7 @@
 import 'dart:io';
 const url = 'http://10.0.2.2:8800';
-//const url = 'https://1a96-196-224-177-35.ngrok-free.app';
-//const url = 'http://192.168.1.183:8800';
+//const url = 'https://b436-196-224-165-24.ngrok-free.app';
+//const url = 'http://192.168.43.178:8800';
 
 String? globalToken;
 String? globalRole;

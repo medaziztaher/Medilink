@@ -1,27 +1,21 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:medilink_client/widgets/allergys/user_alergys/user_alergys.dart';
-import 'package:medilink_client/widgets/diseases/user_diseases/user_disease.dart';
-import 'package:medilink_client/widgets/home/doctor/doctor_screen.dart';
-import 'package:medilink_client/widgets/user/componnets/doctor/doctor_screen.dart';
+import 'package:medilink_client/utils/size_config.dart';
+
 import '../../../models/metric.dart';
 import '../../../models/user.dart';
 import '../../../settings/networkhandler.dart';
 import '../../../settings/path.dart';
-import '../../../utils/constatnts.dart';
-import '../../allergys/allergy.dart';
-import '../../diseases/diseases_screen.dart';
-import '../../healthMetrics/components/all_user_metrics.dart';
+
+import '../../../settings/realtime.dart';
 import '../../healthMetrics/health_metric_screen.dart';
-import '../../labresult/components/user_lab_results/user_lab_results.dart';
-import '../../prescriptions/prescriptions_screen.dart';
-import '../../prescriptions/user_prescriptions/user_prescriptions.dart';
-import '../../radiographie/radiographie_screen.dart';
-import '../../radiographie/user_radiographie/user_radiographie.dart';
-import '../../surgerys/surgerys_screen.dart';
-import '../../surgerys/user_surgerys/user_surgerys.dart';
+
+import '../../notifications/notification_screen.dart';
+import '../../search/search_screen.dart';
+
 import '../../user/user_screen.dart';
+import 'components/appointments.dart';
 
 class PatientHomeScreen extends StatefulWidget {
   const PatientHomeScreen({Key? key, required this.user}) : super(key: key);
@@ -34,6 +28,7 @@ class PatientHomeScreen extends StatefulWidget {
 class _PatientHomeScreenState extends State<PatientHomeScreen> {
   bool isLoading = false;
   NetworkHandler networkHandler = NetworkHandler();
+  final socket = SocketClient.instance.socket!;
 
   Future<List<Metric>> getAllMetric() async {
     try {
@@ -65,11 +60,87 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     }
   }
 
+  void _setupSocketListeners() {
+    socket.on('followRequestError', (data) {});
+    socket.on('followRequest', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('followRequestReceived', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('followApprovedReceived', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('followApproved', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('requestCanceled', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('followCanceled', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('unfollowRequest', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('unfollowSuccessPatient', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('unfollowSuccessReceived', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('unfollowSuccess', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('rjectedRequest', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+    socket.on('rejectRequest', (data) {
+      if (mounted) {
+        _initializeUser();
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    getAllMetric();
+    getAllUsers();
+    _setupSocketListeners();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 40),
+        padding: const EdgeInsets.only(top: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -78,33 +149,52 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Welcome ${widget.user.firstname}",
-                    style: TextStyle(
-                      fontSize: 35,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Column(
+                    children: [
+                      Text("Welcome, ${widget.user.firstname}",
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium!
+                              .copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1)),
+                      Padding(
+                        padding: EdgeInsets.only(
+                            left: getProportionateScreenWidth(20)),
+                        child: Text(
+                          "How are you feeling today?",
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      )
+                    ],
                   ),
-                  CircleAvatar(
-                    radius: 25,
-                    backgroundImage: widget.user.picture != null
-                        ? CachedNetworkImageProvider(widget.user.picture!)
-                        : const AssetImage(kProfile) as ImageProvider,
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: ()=>Get.to(() => NotificationScreen(user: widget.user)),
+                        icon: const Icon(Icons.notifications_none),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          Get.to(() => SearchScreen());
+                        },
+                        icon: const Icon(Icons.search),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 30),
-            const Padding(
+            Appointments(),
+            const SizedBox(height: 30),
+            Padding(
               padding: EdgeInsets.only(left: 15),
-              child: Text(
-                "Add new metric value ",
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black54,
-                ),
-              ),
+              child: Text("Add new metric value ",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium!
+                      .copyWith(fontWeight: FontWeight.w700, letterSpacing: 1)),
             ),
             FutureBuilder<List<Metric>>(
               future: getAllMetric(),
@@ -160,77 +250,14 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 }
               },
             ),
-            ElevatedButton(
-                onPressed: () => Get.to(() => UserMetrics(
-                      user: widget.user,
-                    )),
-                child: Text("Metrics")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => UserLabs(
-                      user: widget.user,
-                    )),
-                child: Text("Labs")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => UserAllergeys(
-                      user: widget.user,
-                    )),
-                child: Text("Allergys")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => UserDiseases(
-                      user: widget.user,
-                    )),
-                child: Text("Disease")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => UserRadios(
-                      user: widget.user,
-                    )),
-                child: Text("Radios")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => RadioghraphieScreen(
-                      userId: widget.user.id!,
-                    )),
-                child: Text("Add radio")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => DiseasesScreen(
-                      userId: widget.user.id!,
-                    )),
-                child: Text("Add disease")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => AllergysScreen(
-                      userId: widget.user.id!,
-                    )),
-                child: Text("Add Allergys")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => Prescriptions(
-                      user: widget.user,
-                    )),
-                child: Text("Add Prescription")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => UserPrescriptions(
-                      user: widget.user,
-                    )),
-                child: Text("Prescriptions")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => UserSurgerys(
-                      user: widget.user,
-                    )),
-                child: Text("Surgerys")),
-            ElevatedButton(
-                onPressed: () => Get.to(() => SurgeryScreen(
-                      userId: widget.user.id!,
-                    )),
-                child: Text("Prescriptions")),
-            const SizedBox(height: 15),
-            const Padding(
+            const SizedBox(height: 30),
+            Padding(
               padding: EdgeInsets.only(left: 15),
-              child: Text(
-                "User Doctors",
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black54,
-                ),
-              ),
+              child: Text("User Doctors",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium!
+                      .copyWith(fontWeight: FontWeight.w700, letterSpacing: 1)),
             ),
             FutureBuilder<List<User>>(
               future: getAllUsers(),
@@ -285,25 +312,17 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                                   color: Colors.black54,
                                 ),
                               ),
-                              Text(
-                                user.speciality ?? "",
-                                style: const TextStyle(
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(Icons.star, color: Colors.amber),
-                                  Text(
-                                    "4.9",
-                                    style: TextStyle(
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              user.type == 'Doctor'
+                                  ? Text(
+                                      user.speciality ?? "",
+                                      style: const TextStyle(
+                                        color: Colors.black54,
+                                      ),
+                                    )
+                                  : Text(user.type ?? "",
+                                      style: const TextStyle(
+                                        color: Colors.black54,
+                                      )),
                             ],
                           ),
                         ),

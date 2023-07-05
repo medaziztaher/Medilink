@@ -1,93 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:medilink_client/models/user.dart';
-import 'package:medilink_client/widgets/allergys/allergy.dart';
-import 'package:medilink_client/widgets/allergys/user_alergys/user_alergys.dart';
-import 'package:medilink_client/widgets/diseases/user_diseases/user_disease.dart';
-import 'package:medilink_client/widgets/labresult/components/user_lab_results/user_lab_results.dart';
-import 'package:medilink_client/widgets/prescriptions/prescriptions_screen.dart';
-import 'package:medilink_client/widgets/prescriptions/user_prescriptions/user_prescriptions.dart';
-import 'package:medilink_client/widgets/radiographie/user_radiographie/user_radiographie.dart';
-import 'package:medilink_client/widgets/surgerys/surgerys_screen.dart';
-import 'package:medilink_client/widgets/surgerys/user_surgerys/user_surgerys.dart';
 
-import '../../../utils/size_config.dart';
+import '../../../models/user.dart';
+import '../../allergys/user_allergy/user_allergy_screen.dart';
+import '../../analyse/user_analyse/user_analyse_screen.dart';
+import '../../diseases/user_disease/user_disease_screen.dart';
+import '../../emergency_contact/get_emergegncy_contact/get_emergency_contact_screen.dart';
+import '../../healthMetrics/components/all_user_metrics.dart';
+import '../../prescriptions/user_presc/user_presc_screen.dart';
+import '../../radiographie/user_radio/user_radio_screen.dart';
+import '../../surgerys/user_surgerie/user_surgerie_screen.dart';
+import 'add_medical_files.dart';
+import 'dossiermedicale_menu.dart';
 
 class Body extends StatelessWidget {
-  const Body({super.key, required this.user});
+  const Body({super.key, required this.user, required this.userId});
   final User user;
+  final String? userId;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height,
-      child: Column(children: [
-        SizedBox(height: SizeConfig.screenHeight * 0.04),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Text("${user.name} medicale Fils : "),
-          ],
-        ),
-        SizedBox(height: SizeConfig.screenHeight * 0.04),
-        GestureDetector(
-          onTap: () => Get.to(() => UserAllergeys(user: user)),
-          child: ListTile(
-            title: Text("Allergys  : "),
-            trailing: Icon(Icons.arrow_forward_ios),
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(vertical: 20),
+      child: Column(
+        children: [
+          ProfileMenu(
+            text: "Metrics",
+            icon: "assets/icons/metric.svg",
+            press: () => Get.to(() => UserMetrics(user: user)),
           ),
-        ),
-        GestureDetector(
-          onTap: () => Get.to(() => UserLabs(user: user)),
-          child: ListTile(
-            title: Text("Lab  Results  : "),
-            trailing: Icon(Icons.arrow_forward_ios),
+          ProfileMenu(
+            text: "Allergies",
+            icon: "assets/icons/allergie.svg",
+            press: () => Get.to(() => UserAllergeyScreen(user: user)),
           ),
-        ),
-        GestureDetector(
-          onTap: () => Get.to(() => UserRadios(user: user)),
-          child: ListTile(
-            title: Text("Radiographies : "),
-            trailing: Icon(Icons.arrow_forward_ios),
+          ProfileMenu(
+            text: "Diseases",
+            icon: "assets/icons/disease.svg",
+            press: () => Get.to(() => UserDiseaseScreen(
+                  user: user,
+                )),
           ),
-        ),
-       GestureDetector(
-        onTap: ()=> Get.to(()=>UserDiseases(user: user)),
-        child: Text("Desieses")),
-        GestureDetector(
-           onTap: () => Get.to(() => SurgeryScreen(userId: user.id!)),
-          child: ListTile(
-            title: Text("Surgeries : "),
-            trailing: Row(
-              children: [
-                GestureDetector(
-                    onTap: () => Get.to(() => SurgeryScreen(userId: user.id!)),
-                    child: Icon(Icons.add)),
-                SizedBox(width: 5),
-                GestureDetector(
-                    onTap: () => Get.to(() => UserSurgerys(user: user)),
-                    child: Icon(Icons.arrow_forward_ios)),
-              ],
+          ProfileMenu(
+            text: "Prescrptions",
+            icon: "assets/icons/ordonance.svg",
+            press: () => Get.to(() => UserPrescScreen(
+                  user: user,
+                )),
+          ),
+          ProfileMenu(
+            text: "Radiographies",
+            icon: "assets/icons/radigraphie.svg",
+            press: () => Get.to(() => UserRadioScreen(user: user)),
+          ),
+          ProfileMenu(
+            text: "Analyses",
+            icon: "assets/icons/analyses.svg",
+            press: () => Get.to(() => UserAnalyseScreen(user: user)),
+          ),
+          ProfileMenu(
+            text: "Surgeries",
+            icon: "assets/icons/surgerie.svg",
+            press: () => Get.to(() => UserSurgeriesScreen(user: user)),
+          ),
+          ProfileMenu(
+            text: "Emergency Contacts",
+            icon: "assets/icons/téléchargement.svg",
+            press: () => Get.to(() => UserEmergencyContact(user: user)),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.black,
+                padding: EdgeInsets.all(20),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
+                backgroundColor: Color(0xFFF5F6F9),
+              ),
+              onPressed: () =>
+                  Get.to(() => AddMedicalFiles(user: user, userId: userId)),
+              child: Row(
+                children: [
+                  SvgPicture.asset(
+                    "assets/icons/7354347.svg",
+                    width: 40,
+                  ),
+                  SizedBox(width: 20),
+                  Expanded(child: Text("Add Medical Files")),
+                  Icon(Icons.add_circle_outline),
+                ],
+              ),
             ),
-          ),
-        ),
-        GestureDetector(
-           onTap: () => Get.to(() => Prescriptions(user: user)),
-          child: ListTile(
-            title: Text("Prescriptions : "),
-            trailing: Row(
-              children: [
-                GestureDetector(
-                    onTap: () => Get.to(() => Prescriptions(user: user)),
-                    child: Icon(Icons.add)),
-                SizedBox(width: 5),
-                GestureDetector(
-                    onTap: () => Get.to(() => UserPrescriptions(user: user)),
-                    child: Icon(Icons.arrow_forward_ios)),
-              ],
-            ),
-          ),
-        )
-      ]),
+          )
+        ],
+      ),
     );
   }
 }

@@ -9,7 +9,7 @@ const surgerySchema = new mongoose.Schema({
   provider: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'HealthcareProvider',
-    required: true,
+    required: false,
   },
   type:{
     type: String,
@@ -27,7 +27,6 @@ const surgerySchema = new mongoose.Schema({
     type: String,
   },
   files:[{
-    id: String, 
     url: String, 
   }],
   sharedwith : [{type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false }]

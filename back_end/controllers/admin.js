@@ -2,11 +2,9 @@ const db = require('../models/models');
 const notificationAdmin = require('./push_notification')
 
 const deleteusers = async (req, res) => {
-    const { id } = req.params;
-    console.log(req.params)
+    const { id } = req.params
     try {
         const user = await db.User.findById(id);
-        console.log(user);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -14,9 +12,7 @@ const deleteusers = async (req, res) => {
         if (user.role !== 'Patient' && user.role !== 'HealthcareProvider') {
             return res.status(400).json({ success: false, message: 'Invalid user role' });
         }
-        console.log(user)
         await db.User.deleteOne({ _id: user._id });
-        console.log(user)
 
         return res.status(200).json({ success: true, message: 'User deleted successfully' });
     } catch (error) {

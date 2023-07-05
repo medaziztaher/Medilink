@@ -4,6 +4,7 @@ const { verifyToken } = require("../middleware/authorization");
 const provider = require('../controllers/provider');
 
 router.get('/patients', verifyToken, provider.getPatients);
+router.get('/pending-patients', verifyToken, provider.getPendingPatients);
 router.get('/ratings-reviews/:providerId', verifyToken, provider.getProviderRatingsAndReviews);
 router.post('/availability', verifyToken, provider.setavailibility);
 router.post('/experience', verifyToken, provider.setexperience);

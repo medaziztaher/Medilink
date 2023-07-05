@@ -1,5 +1,7 @@
 
 
+import 'package:intl/intl.dart';
+
 class Prescription {
   String? id;
   String? patient;
@@ -7,8 +9,8 @@ class Prescription {
   String? medication;
   String? dosage;
   String? frequency;
-  DateTime? startDate;
-  DateTime? endDate;
+  String? startDate;
+  String? endDate;
   DateTime? createdAt;
   DateTime? updatedAt;
 
@@ -26,6 +28,16 @@ class Prescription {
   });
 
   factory Prescription.fromJson(Map<String, dynamic> json) {
+    String? formattedDate;
+    if (json['dateDébut'] != null) {
+      DateTime date = DateTime.parse(json['dateDébut']);
+      formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    }
+    String? formattedDate1;
+    if (json['dateFin'] != null) {
+      DateTime date = DateTime.parse(json['dateFin']);
+      formattedDate1 = DateFormat('yyyy-MM-dd').format(date);
+    }
     return Prescription(
       id: json['_id'] as String?,
       patient: json['patient'] as String?,
@@ -33,8 +45,8 @@ class Prescription {
       medication: json['médicament'] as String?,
       dosage: json['dosage'] as String?,
       frequency: json['fréquence'] as String?,
-      startDate: json['dateDébut'] != null ? DateTime.parse(json['dateDébut']) : null,
-      endDate: json['dateFin'] != null ? DateTime.parse(json['dateFin']) : null,
+      startDate: formattedDate,
+      endDate: formattedDate1,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );

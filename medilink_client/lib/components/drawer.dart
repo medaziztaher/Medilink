@@ -1,17 +1,20 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:get/get.dart';
-import 'package:medilink_client/api/user.dart';
+
 import 'package:medilink_client/utils/constatnts.dart';
 import 'package:medilink_client/utils/size_config.dart';
-import 'package:medilink_client/widgets/allergys/allergy.dart';
-import 'package:medilink_client/widgets/diseases/diseases_screen.dart';
+import 'package:medilink_client/widgets/profil/profile_screen.dart';
+import 'package:medilink_client/widgets/signin/signin_screen.dart';
 
 import '../firebase/api/authentififcation.dart';
 import '../models/user.dart';
 import '../utils/prefs.dart';
-import '../widgets/labresult/labresult_screen.dart';
+import '../widgets/allergys/add_allergy/add_allergy_screen.dart';
+import '../widgets/analyse/add_analyse/add_analyse_screen.dart';
+import '../widgets/diseases/add_disease/add_disease_screen.dart';
+import '../widgets/dossier_medicale/dossier_screen.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key, required this.user});
@@ -63,34 +66,20 @@ class CustomDrawer extends StatelessWidget {
                   ),
                 ),
               ),
-              /*ListTile(
-                title: const Text("Settings"),
-                trailing: const Icon(Icons.settings),
-                onTap: () {},
-              ),*/
-              Spacer(),
-              if (user.role == "Patient")
+              SizedBox(height: getProportionateScreenWidth(20)),
+              if (user.role == "Patient") ...[
                 ListTile(
-                    title: const Text("Add Analyse"),
-                    trailing: const Icon(Icons.file_open),
-                    onTap: () =>
-                        Get.to(() => LabresultScreen(userId: user.id!))),
-              if (user.role == "Patient")
-                ListTile(
-                  title: const Text("Add Disease"),
-                  trailing: const Icon(Icons.file_open),
-                  onTap: () => Get.to(() => DiseasesScreen(userId: user.id!)),
+                  title: const Text("Dossier Medicale"),
+                  trailing: const Icon(Icons.folder),
+                  onTap: () => Get.to(() => DossierMedicale(user: user)),
                 ),
-              if (user.role == "Patient")
-                ListTile(
-                  title: const Text("Add Allergy"),
-                  trailing: const Icon(Icons.file_open),
-                  onTap: () => Get.to(() => AllergysScreen(userId: user.id!)),
-                ),
+              ],
               ListTile(
-                title: const Text("Feedback"),
-                trailing: const Icon(Icons.feedback),
-                onTap: () {},
+                title: const Text("Edit Profil"),
+                trailing: const Icon(Icons.person_2_outlined),
+                onTap: () async {
+                  Get.off(() => ProfileScreen(user:user));
+                },
               ),
               ListTile(
                 title: const Text("Logout"),
@@ -98,7 +87,7 @@ class CustomDrawer extends StatelessWidget {
                 onTap: () async {
                   await auth.logout();
                   await pref.prefs?.clear();
-                  SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                  Get.offAll(() => SignInScreen());
                 },
               ),
             ],

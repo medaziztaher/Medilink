@@ -6,7 +6,6 @@ import '../../../components/social_card.dart';
 import '../../../utils/size_config.dart';
 import 'signin_forn.dart';
 
-
 class Body extends StatelessWidget {
   const Body({super.key});
 
@@ -21,7 +20,7 @@ class Body extends StatelessWidget {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                SizedBox(height: SizeConfig.screenHeight* 0.02),
+                SizedBox(height: SizeConfig.screenHeight * 0.02),
                 Text(
                   "kwelcome".tr,
                   style: TextStyle(
@@ -34,22 +33,9 @@ class Body extends StatelessWidget {
                   "kcontinue".tr,
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: SizeConfig.screenHeight* 0.04),
+                SizedBox(height: SizeConfig.screenHeight * 0.04),
                 const SignIn(),
-                SizedBox(height: SizeConfig.screenHeight* 0.04),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SocialCard(
-                      icon: "assets/icons/google-icon.svg",
-                      press: () {},
-                    ),
-                    SocialCard(
-                      icon: "assets/icons/facebook-2.svg",
-                      press: () {},
-                    ),
-                  ],
-                ),
+                SizedBox(height: SizeConfig.screenHeight * 0.04),
                 SizedBox(height: getProportionateScreenHeight(40)),
                 const NoAccountText(),
               ],

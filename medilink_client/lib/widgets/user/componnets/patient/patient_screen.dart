@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:get/get.dart';
 import 'package:medilink_client/utils/size_config.dart';
 import 'package:medilink_client/widgets/dossier_medicale/dossier_screen.dart';
@@ -16,11 +17,11 @@ import '../../../../settings/realtime.dart';
 import '../../../../settings/realtimelogic.dart';
 import '../../../../utils/constatnts.dart';
 import '../../../../utils/global.dart';
+import '../../../analyse/add_analyse/add_analyse_screen.dart';
 import '../../../chat/components/individual/indiviual_screen.dart';
-import '../../../healthMetrics/components/all_user_metrics.dart';
+import '../../../dossier_medicale/components/dossiermedicale_menu.dart';
 import '../../../home/home_screen.dart';
-import '../../../labresult/labresult_screen.dart';
-import '../../../radiographie/radiographie_screen.dart';
+import '../../../radiographie/add_radio/add_radio_screen.dart';
 
 class PatientScreen extends StatefulWidget {
   const PatientScreen({Key? key, required this.user}) : super(key: key);
@@ -37,12 +38,19 @@ class _PatientScreenState extends State<PatientScreen> {
   String? message;
   final SocketMethods _socket = SocketMethods();
   final socket = SocketClient.instance.socket!;
-  late Future<String?> type;
+  String? type;
 
   @override
   void initState() {
     super.initState();
-    type = getContectedUsertype();
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    type = globalType;
+    if (type == null) {
+      type = await queryHealthcareProvdierType();
+    }
     _checkUser();
     _setupSocketListeners();
   }
@@ -75,80 +83,65 @@ class _PatientScreenState extends State<PatientScreen> {
 
   void _setupSocketListeners() {
     socket.on('followRequestError', (data) {
-      if (mounted) {
-        Get.snackbar("followRequestError",
-            "You already have a healthcare provider with the same specialty.");
-      }
+      if (mounted) {}
     });
     socket.on('followRequest', (data) {
       if (mounted) {
-        Get.snackbar("followRequest", data);
         _checkUser();
       }
     });
     socket.on('followRequestReceived', (data) {
       if (mounted) {
-        Get.snackbar("followRequestReceived", data);
         _checkUser();
       }
     });
     socket.on('followApprovedReceived', (data) {
       if (mounted) {
-        Get.snackbar("followApprovedReceived", data);
         _checkUser();
       }
     });
     socket.on('followApproved', (data) {
       if (mounted) {
-        Get.snackbar("followApproved", data);
         _checkUser();
       }
     });
     socket.on('requestCanceled', (data) {
       if (mounted) {
-        Get.snackbar("requestCanceled", data);
         _checkUser();
       }
     });
     socket.on('followCanceled', (data) {
       if (mounted) {
-        Get.snackbar("followCanceled", data);
         _checkUser();
       }
     });
     socket.on('unfollowRequest', (data) {
       if (mounted) {
-        Get.snackbar("unFollowRequest", data);
         _checkUser();
       }
     });
     socket.on('unfollowSuccessPatient', (data) {
       if (mounted) {
-        Get.snackbar("unFollowSuccess", data);
         _checkUser();
       }
     });
     socket.on('unfollowSuccessReceived', (data) {
       if (mounted) {
-        Get.snackbar("unFollowSuccessReceived", data);
         _checkUser();
       }
     });
     socket.on('unfollowSuccess', (data) {
       if (mounted) {
-        Get.snackbar("unFollowSuccess", data);
         _checkUser();
       }
     });
     socket.on('rjectedRequest', (data) {
       if (mounted) {
-        Get.snackbar("rejectedRequest", data);
         _checkUser();
       }
     });
     socket.on('rejectRequest', (data) {
       if (mounted) {
-        Get.snackbar("rejectRequest", data);
         _checkUser();
       }
     });
@@ -180,6 +173,14 @@ class _PatientScreenState extends State<PatientScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 10),
                     child: Stack(
                       children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            IconButton(
+                                onPressed: () => Get.back(),
+                                icon: Icon(Icons.arrow_back_ios))
+                          ],
+                        ),
                         Padding(
                           padding: EdgeInsets.symmetric(vertical: 10),
                           child: Column(
@@ -211,6 +212,7 @@ class _PatientScreenState extends State<PatientScreen> {
                               ),
                               SizedBox(height: 15),
                               ButtonSection(
+                                phoneNumber: widget.user.phoneNumber!,
                                 userId: widget.user.id!,
                                 message: message,
                                 onApprove: () async {
@@ -259,131 +261,81 @@ class _PatientScreenState extends State<PatientScreen> {
                             ),
                           ),
                           child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                ListTile(
-                                  title: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text('Address:'),
-                                      SizedBox(
-                                          width:
-                                              getProportionateScreenWidth(5)),
-                                      Text(widget.user.address!),
-                                    ],
-                                  ),
+                            child: Column(children: [
+                              ListTile(
+                                title: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Text('Address:'),
+                                    SizedBox(
+                                        width: getProportionateScreenWidth(5)),
+                                    Text(widget.user.address!),
+                                  ],
                                 ),
-                                SizedBox(
-                                    height: getProportionateScreenWidth(10)),
-                                ListTile(
-                                  title: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text('Phone Number:'),
-                                      SizedBox(
-                                          width:
-                                              getProportionateScreenWidth(5)),
-                                      Text(widget.user.phoneNumber!),
-                                    ],
-                                  ),
+                              ),
+                              SizedBox(height: getProportionateScreenWidth(10)),
+                              ListTile(
+                                title: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Text('Phone Number:'),
+                                    SizedBox(
+                                        width: getProportionateScreenWidth(5)),
+                                    Text(widget.user.phoneNumber!),
+                                  ],
                                 ),
-                                SizedBox(
-                                    height: getProportionateScreenWidth(10)),
-                                ListTile(
-                                  title: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text('Gender:'),
-                                      SizedBox(
-                                          width:
-                                              getProportionateScreenWidth(5)),
-                                      Text(widget.user.gender!),
-                                    ],
-                                  ),
+                              ),
+                              SizedBox(height: getProportionateScreenWidth(10)),
+                              ListTile(
+                                title: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Text('Gender:'),
+                                    SizedBox(
+                                        width: getProportionateScreenWidth(5)),
+                                    Text(widget.user.gender!),
+                                  ],
                                 ),
-                                SizedBox(
-                                    height: getProportionateScreenWidth(10)),
-                                ListTile(
-                                  title: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text('Birthdate:'),
-                                      SizedBox(
-                                          width:
-                                              getProportionateScreenWidth(5)),
-                                      Text(widget.user.dateofbirth!),
-                                    ],
-                                  ),
+                              ),
+                              SizedBox(height: getProportionateScreenWidth(10)),
+                              ListTile(
+                                title: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Text('Birthdate:'),
+                                    SizedBox(
+                                        width: getProportionateScreenWidth(5)),
+                                    Text(widget.user.dateofbirth.toString()),
+                                  ],
                                 ),
-                                SizedBox(
-                                    height: getProportionateScreenWidth(10)),
-                                if (type == 'Laboratoire')
-                                  ListTile(
-                                    title: GestureDetector(
-                                      onTap: () => Get.to(() => LabresultScreen(
-                                          userId: widget.user.id!)),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text('Add Lab Results'),
-                                          Icon(Icons.arrow_forward_ios),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                SizedBox(
-                                    height: getProportionateScreenWidth(10)),
-                                if (type == 'Center d\'imagerie Medicale')
-                                  ListTile(
-                                    title: GestureDetector(
-                                      onTap: () => Get.to(() =>
-                                          RadioghraphieScreen(
-                                              userId: widget.user.id!)),
-                                      child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text('Add Radiographie'),
-                                            Icon(Icons.arrow_forward_ios),
-                                          ]),
-                                    ),
-                                  ),
-                                SizedBox(
-                                    height: getProportionateScreenWidth(10)),
-                                
-                                  ListTile(
-                                      title: GestureDetector(
-                                    onTap: () => Get.to(() => UserMetrics(
-                                          user: widget.user,
-                                        )),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('Patient Metrics'),
-                                        Icon(Icons.arrow_forward_ios)
-                                      ],
-                                    ),
-                                  )),
-                                  SizedBox(
-                                      height: getProportionateScreenWidth(10)),
-                                  ListTile(
-                                      title: GestureDetector(
-                                    onTap: () => Get.to(() =>
-                                        DossierMedicale(user: widget.user)),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('Dossier Medicale'),
-                                        Icon(Icons.folder)
-                                      ],
-                                    ),
-                                  ))
-                                ]
-                              
-                            ),
+                              ),
+                              SizedBox(height: getProportionateScreenWidth(10)),
+                              if (type == 'Laboratoire') ...[
+                                ProfileMenu(
+                                  text: "Add Analyse",
+                                  icon: "assets/icons/analyses.svg",
+                                  press: () => Get.to(() =>
+                                      AddAnalyseScreen(user: widget.user)),
+                                ),
+                              ],
+                              if (type == 'Center d\'imagerie Medicale') ...[
+                                ProfileMenu(
+                                  text: "Add Radiographie",
+                                  icon: "assets/icons/radigraphie.svg",
+                                  press: () => Get.to(
+                                      () => AddRadioScreen(user: widget.user)),
+                                ),
+                              ],
+                              SizedBox(height: getProportionateScreenWidth(10)),
+                              if (type == 'Doctor') ...[
+                                ProfileMenu(
+                                  text: "Dossier Medicale ",
+                                  icon: "assets/icons/5559808.svg",
+                                  press: () => Get.to(
+                                      () => DossierMedicale(user: widget.user)),
+                                ),
+                              ]
+                            ]),
                           ),
                         )
                       : SizedBox(),
@@ -425,6 +377,7 @@ class ButtonSection extends StatelessWidget {
     required this.onDecline,
     required this.onUnfollow,
     required this.userId,
+    required this.phoneNumber,
   });
 
   final String? message;
@@ -432,6 +385,7 @@ class ButtonSection extends StatelessWidget {
   final VoidCallback onDecline;
   final VoidCallback onUnfollow;
   final String userId;
+  final String phoneNumber;
 
   @override
   Widget build(BuildContext context) {
@@ -482,10 +436,13 @@ class ButtonSection extends StatelessWidget {
               color: const Color.fromARGB(255, 151, 198, 226),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.call,
-              color: Colors.white,
-              size: 25,
+            child: GestureDetector(
+              onTap: () => FlutterPhoneDirectCaller.callNumber(phoneNumber),
+              child: const Icon(
+                Icons.call,
+                color: Colors.white,
+                size: 25,
+              ),
             ),
           ),
           const SizedBox(width: 20),

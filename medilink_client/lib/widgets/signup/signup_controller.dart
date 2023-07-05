@@ -242,6 +242,7 @@ class SignupController extends GetxController {
     isLoading.value = true;
     removeError("kerror1".tr);
     removeError("kerror2".tr);
+    print("pass ! ${passwordController.text}");
     try {
       if (formKeySignUp.currentState!.validate()) {
         Map<String, String> data = {
@@ -264,16 +265,11 @@ class SignupController extends GetxController {
           }
         }
 
-        /*final response = await auth.createUser(
+       /* final response = await auth.createUser(
             emailController.text, passwordController.text, data);
-        auth.setInitialsignupScreen(auth.firebaseUser.value);*/
+        auth.setInitialsignupScreen(auth.firebaseUser.value); */
         final response = await networkHandler.post(signup, data);
-        if (response!.statusCode == 400) {
-          final responseData = json.decode(response.body);
-          final errors = responseData['message'];
-          print(errors);
-        }
-        if (response.statusCode == 201 || response.statusCode == 200) {
+        if (response!.statusCode == 201 || response.statusCode == 200) {
           final responseData = json.decode(response.body);
           print(responseData);
           final token = responseData['token'];
@@ -286,23 +282,14 @@ class SignupController extends GetxController {
           await pushDeviceToken();
           print(globalDeviceToken);
           //Get.to(() => MailVerfication());
-        } else if (response.statusCode == 422) {
-          final responseData = json.decode(response.body);
-          final errors = responseData['errors'];
-          addError(errors.join('\n'));
         } else if (response.statusCode == 401) {
           final responseData = json.decode(response.body);
-          final errors = responseData['errors'];
-          if (errors != null) {
-            addError(errors);
-          } else {
-            removeError(errors);
-          }
+          final errors = responseData['message'];
+          addError(errors);
         } else if (response.statusCode == 500) {
           final responseData = json.decode(response.body);
-          final message = responseData['message'];
-          print(message);
-          addError(message);
+          final errors = responseData['message'];
+          addError(errors);
         }
       }
     } on SocketException {

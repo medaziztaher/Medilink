@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:get/get.dart';
 import 'package:medilink_client/utils/global.dart';
 import 'package:medilink_client/widgets/chat/components/individual/indiviual_screen.dart';
@@ -13,6 +14,7 @@ import '../../../../settings/path.dart';
 import '../../../../settings/realtime.dart';
 import '../../../../settings/realtimelogic.dart';
 import '../../../../utils/constatnts.dart';
+import '../../../book_appointment/book_appointment.dart';
 
 class DoctorScreen extends StatefulWidget {
   const DoctorScreen({required this.user});
@@ -29,105 +31,109 @@ class _DoctorScreenState extends State<DoctorScreen> {
   final SocketMethods _socket = SocketMethods();
   final socket = SocketClient.instance.socket!;
   String? logedinuserole;
+  String? selectedDay;
+  String? selectedTime;
+  String? reason;
+
+  List<String> daysOfWeek = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+
+  List<String> timeSlots = [
+    '07:00 am',
+    '08:00 am',
+    '09:00 am',
+    '10:00 am',
+    '11:00 am',
+    '12:00 pm',
+    '01:00 pm',
+    '02:00 pm',
+    '03:00 pm',
+    '04:00 pm',
+    '05:00 pm',
+    '06:00 pm',
+  ];
 
   @override
   void initState() {
     super.initState();
-    setRole();
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    logedinuserole = globalRole;
+    if (logedinuserole == null) {
+      logedinuserole = await queryUserRole();
+    }
     _checkUser();
     _setupSocketListeners();
   }
 
-  void setRole() async {
-    final String? globrole = globalRole;
-    String? role;
-    if (globrole != null) {
-      role = globrole;
-    } else {
-      role = await queryUserRole();
-    }
-    setState(() {
-      logedinuserole = role;
-    });
-    print(logedinuserole);
-  }
-
   void _setupSocketListeners() {
-    socket.on('followRequestError', (data) {
-      if (mounted) {
-        Get.snackbar("followRequestError",
-            "You already have a healthcare provider with the same specialty.");
-      }
-    });
+    socket.on('followRequestError', (data) {});
     socket.on('followRequest', (data) {
       if (mounted) {
-        Get.snackbar("followRequest", data);
         _checkUser();
       }
     });
     socket.on('followRequestReceived', (data) {
       if (mounted) {
-        Get.snackbar("followRequestReceived", data);
         _checkUser();
       }
     });
     socket.on('followApprovedReceived', (data) {
       if (mounted) {
-        Get.snackbar("followApprovedReceived", data);
         _checkUser();
       }
     });
     socket.on('followApproved', (data) {
       if (mounted) {
-        Get.snackbar("followApproved", data);
         _checkUser();
       }
     });
     socket.on('requestCanceled', (data) {
       if (mounted) {
-        Get.snackbar("requestCanceled", data);
         _checkUser();
       }
     });
     socket.on('followCanceled', (data) {
       if (mounted) {
-        Get.snackbar("followCanceled", data);
         _checkUser();
       }
     });
     socket.on('unfollowRequest', (data) {
       if (mounted) {
-        Get.snackbar("unFollowRequest", data);
         _checkUser();
       }
     });
     socket.on('unfollowSuccessPatient', (data) {
       if (mounted) {
-        Get.snackbar("unFollowSuccess", data);
         _checkUser();
       }
     });
     socket.on('unfollowSuccessReceived', (data) {
       if (mounted) {
-        Get.snackbar("unFollowSuccessReceived", data);
         _checkUser();
       }
     });
     socket.on('unfollowSuccess', (data) {
       if (mounted) {
-        Get.snackbar("unFollowSuccess", data);
         _checkUser();
       }
     });
     socket.on('rjectedRequest', (data) {
       if (mounted) {
-        Get.snackbar("rejectedRequest", data);
         _checkUser();
       }
     });
     socket.on('rejectRequest', (data) {
       if (mounted) {
-        Get.snackbar("rejectRequest", data);
         _checkUser();
       }
     });
@@ -187,63 +193,29 @@ class _DoctorScreenState extends State<DoctorScreen> {
                         ),
                       ),
                       SizedBox(height: 15),
-                      logedinuserole == "Patient"
-                          ? ButtonSection(
-                              userId: widget.user.id!,
-                              message: message,
-                              onFollow: () async {
-                                String? senderId = await queryUserID();
-                                print('Follow clicked. SenderId: $senderId');
-                                _socket.followUser(senderId!, widget.user.id!);
-                              },
-                              onUnfollow: () async {
-                                String? senderId = await queryUserID();
-                                print('Unfollow clicked. SenderId: $senderId');
-                                _socket.unfollowUser(
-                                    senderId!, widget.user.id!);
-                              },
-                              onCancelRequest: () async {
-                                String? senderId = await queryUserID();
-                                print(
-                                    'Cancel request clicked. SenderId: $senderId');
-                                _socket.cancelRequest(
-                                    senderId!, widget.user.id!);
-                              },
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: const BoxDecoration(
-                                    color: Color.fromARGB(255, 151, 198, 226),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.call,
-                                    color: Colors.white,
-                                    size: 25,
-                                  ),
-                                ),
-                                const SizedBox(width: 20),
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: const BoxDecoration(
-                                    color: Color.fromARGB(255, 151, 198, 226),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: GestureDetector(
-                                    onTap: () => Get.to(() => IndividualScreen(
-                                        userId: widget.user.id!)),
-                                    child: const Icon(
-                                      CupertinoIcons.chat_bubble_text_fill,
-                                      color: Colors.white,
-                                      size: 25,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                      if (logedinuserole == "Patient") ...[
+                        ButtonSection(
+                          phoneNumber: widget.user.phoneNumber!,
+                          userId: widget.user.id!,
+                          message: message,
+                          onFollow: () async {
+                            String? senderId = await queryUserID();
+                            print('Follow clicked. SenderId: $senderId');
+                            _socket.followUser(senderId!, widget.user.id!);
+                          },
+                          onUnfollow: () async {
+                            String? senderId = await queryUserID();
+                            print('Unfollow clicked. SenderId: $senderId');
+                            _socket.unfollowUser(senderId!, widget.user.id!);
+                          },
+                          onCancelRequest: () async {
+                            String? senderId = await queryUserID();
+                            print(
+                                'Cancel request clicked. SenderId: $senderId');
+                            _socket.cancelRequest(senderId!, widget.user.id!);
+                          },
+                        )
+                      ]
                     ],
                   ),
                 ),
@@ -437,51 +409,51 @@ class _DoctorScreenState extends State<DoctorScreen> {
                           ),
                         ],
                       ),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                "consultation Price",
-                                style: TextStyle(
-                                  color: Colors.black54,
+                      child: logedinuserole == 'Patient'
+                          ? Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      "consultation Price",
+                                      style: TextStyle(
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                    Text("${widget.user.appointmentprice}"),
+                                  ],
                                 ),
-                              ),
-                              const Text(
-                                "100DT",
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          InkWell(
-                            onTap: () {},
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              decoration: BoxDecoration(
-                                color: kPrimaryColor,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  "Book Appointment",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
+                                const SizedBox(height: 10),
+                                InkWell(
+                                  onTap: () {
+                                    Get.to(() =>
+                                        BookAppointment(provider: widget.user));
+                                  },
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 18),
+                                    decoration: BoxDecoration(
+                                      color: kPrimaryColor,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        "Book Appointment",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
+                                )
+                              ],
+                            )
+                          : Center(),
                     ),
                   ],
                 ),
@@ -501,6 +473,7 @@ class ButtonSection extends StatelessWidget {
     required this.onUnfollow,
     required this.onCancelRequest,
     required this.userId,
+    required this.phoneNumber,
   });
 
   final String? message;
@@ -508,6 +481,7 @@ class ButtonSection extends StatelessWidget {
   final VoidCallback onUnfollow;
   final VoidCallback onCancelRequest;
   final String userId;
+  final String phoneNumber;
 
   @override
   Widget build(BuildContext context) {
@@ -558,10 +532,13 @@ class ButtonSection extends StatelessWidget {
               color: Color.fromARGB(255, 151, 198, 226),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.call,
-              color: Colors.white,
-              size: 25,
+            child: GestureDetector(
+              onTap: () => FlutterPhoneDirectCaller.callNumber(phoneNumber),
+              child: const Icon(
+                Icons.call,
+                color: Colors.white,
+                size: 25,
+              ),
             ),
           ),
           const SizedBox(width: 20),

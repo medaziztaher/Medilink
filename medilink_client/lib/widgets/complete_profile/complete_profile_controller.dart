@@ -1,14 +1,18 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:medilink_client/api/user.dart';
 import 'package:medilink_client/widgets/home/home_screen.dart';
 
+import '../../models/emergency_contact.dart';
 import '../../models/speciality.dart';
 import '../../settings/networkhandler.dart';
 import '../../settings/path.dart';
 import '../../utils/global.dart';
 import '../../utils/prefs.dart';
+import '../emergency_contact/emergency_contact_screen.dart';
 import '../signin/signin_screen.dart';
 
 class CompleteProfileController extends GetxController {
@@ -19,9 +23,9 @@ class CompleteProfileController extends GetxController {
   late TextEditingController dateofbirthController;
   late TextEditingController nembredenfantController;
   late TextEditingController veriffiactionControler;
-
+  late TextEditingController appointmentPrice;
   Rx<String> selectedDate = ''.obs;
-  late bool isLoading = false;
+  late RxBool isLoading = false.obs;
   final pref = Pref();
   final List<String?> errors = [];
   late String gender = 'Male';
@@ -34,7 +38,7 @@ class CompleteProfileController extends GetxController {
   XFile? educationFile;
   XFile? experienceFiLe;
   ImagePicker picker = ImagePicker();
-  List<Speciality>? specialites;
+  List<Speciality>? specialites=[];
   List<XFile?> imageFiles = List<XFile?>.filled(4, null);
 
   @override
@@ -45,6 +49,7 @@ class CompleteProfileController extends GetxController {
     dateofbirthController.dispose();
     nembredenfantController.dispose();
     veriffiactionControler.dispose();
+    appointmentPrice.dispose();
     super.onClose();
   }
 
@@ -56,6 +61,7 @@ class CompleteProfileController extends GetxController {
     dateofbirthController = TextEditingController();
     nembredenfantController = TextEditingController();
     veriffiactionControler = TextEditingController();
+    appointmentPrice = TextEditingController();
     getAllSpeciality();
     super.onInit();
   }
@@ -79,21 +85,16 @@ class CompleteProfileController extends GetxController {
   }
 
   Future<void> getAllSpeciality() async {
-    isLoading = true;
     try {
       final response = await networkHandler.get(specialitePath);
       print(response);
       final data = response['data'] as List<dynamic>;
       final newSpecialities =
           data.map((item) => Speciality.fromJson(item)).toList(growable: false);
-      print(newSpecialities);
-
-      specialites = newSpecialities;
+   specialites = newSpecialities;
       update();
     } catch (e) {
       print(e);
-    } finally {
-      isLoading = false;
     }
   }
 
@@ -293,7 +294,7 @@ class CompleteProfileController extends GetxController {
   }
 
   Future<void> completeProfile() async {
-    isLoading = true;
+    isLoading.value = true;
     removeError("kerror1".tr);
     removeError("kerror2".tr);
     try {
@@ -308,6 +309,7 @@ class CompleteProfileController extends GetxController {
           'description': descriptionController.text,
           'speciality': specialite,
           'verifciation': veriffiactionControler.text,
+          'appointmentprice': appointmentPrice.text
         };
         final response = await networkHandler.put(profilePath, data);
         if (response.statusCode == 200 || response.statusCode == 201) {
@@ -319,12 +321,15 @@ class CompleteProfileController extends GetxController {
             final imageResponse =
                 await networkHandler.patchImage(userpicPath, imageFile!.path);
             if (imageResponse.statusCode == 200) {
-              if (globalType == 'Doctor') {
+              String? type;
+              type = await queryHealthcareProvdierType();
+              if (type == 'Doctor') {
                 Get.offAll(() => SignInScreen());
                 Get.snackbar("Admin Verification",
                     "Please wait until our admin approuve your account");
+              } else {
+                Get.offAll(() => EmergencyContactScreen());
               }
-              Get.offAll(() => HomeScreen());
             } else {
               print(" image path status code : ${imageResponse.statusCode}");
             }
@@ -347,6 +352,10 @@ class CompleteProfileController extends GetxController {
               }
             }
           }
+        } else if (response.statusCode == 500) {
+          final responseData = json.decode(response.body);
+          final errors = responseData['message'];
+          addError(errors);
         }
       }
     } on SocketException {
@@ -355,7 +364,7 @@ class CompleteProfileController extends GetxController {
       addError("kerror2".tr);
       print(e);
     } finally {
-      isLoading = false;
+      isLoading.value = false;
     }
   }
 }

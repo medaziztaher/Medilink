@@ -1,12 +1,14 @@
 const db = require('../models/models');
 const notificationAdmin = require('./push_notification')
+const mongoose = require('mongoose');
+
 
 
 
 
 const getHealthcareProviders = async (req, res) => {
     try {
-        console.log("user : ", req.user)
+
         const patient = await db.Patient.findById(req.user.id);
 
         if (!patient) {
@@ -16,11 +18,10 @@ const getHealthcareProviders = async (req, res) => {
             .filter((p) => p.status === "Approved")
             .map((p) => p.healthcareproviderId);
         const healthcareProviders = await db.HealthcareProvider.find({ _id: providersIds });
-        console.log("provider : ", healthcareProviders)
         res.status(200).json({ status: true, data: healthcareProviders });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching healthcare providers' });
+        res.status(500).json({ message: 'An error occurred while fetching healthcare providers' });
     }
 };
 const searchProviders = async (req, res) => {
@@ -35,12 +36,11 @@ const searchProviders = async (req, res) => {
                 { speciality: { $regex: regex } }
             ]
         };
-        let patient = await db.Patient.findById(patientId);
-        console.log("patien : ", patient)
+        let patient = await db.Patient.findById(patientId)
         const providersIds = patient.healthcareproviders.map((p) => p.patientId);
-        console.log("providers  Ids  : ", providersIds)
+
         const providers = await db.HealthcareProvider.find(providersIds);
-        console.log("Providers : ", providers)
+
         res.status(200).json(providers);
     } catch (e) {
         console.error(e);
@@ -54,7 +54,7 @@ const getProviderIdFromName = async (req, res) => {
 
     try {
         const provider = await db.Provider.findOne({ name: name });
-        console.log(provider);
+
         if (!provider) {
             return res.status(404).json({ message: 'Provider not found' });
         }
@@ -79,7 +79,7 @@ const getPrescriptionsCurrent = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved'
             );
 
@@ -99,9 +99,9 @@ const getPrescriptionsCurrent = async (req, res) => {
 
 const addPrescription = async (req, res) => {
     try {
-        console.log(req.params)
+
         const patient = await db.Patient.findById(req.params.patientId);
-        //console.log(patient)
+
 
         if (!patient) {
             return res.status(404).json({ message: 'Patient not found' });
@@ -111,98 +111,54 @@ const addPrescription = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved' &&
                     provider.type === 'Doctor'
             );
-        console.log(req.user.id)
-        console.log(isAuthorized)
+
         if (!isAuthorized) {
             return res.status(403).json({ message: 'Unauthorized access' });
         }
-        console.log("isAuthorized", isAuthorized);
-        let provider = null;
 
-        if (req.user.id !== patient._id) {
-            provider = req.user.id;
-        }
-
-        const prescription = await db.Prescription.create({
+        let prescription = new db.Prescription({
             patient: patient._id,
-            provider: provider,
             médicament: req.body.médicament,
             dosage: req.body.dosage,
             fréquence: req.body.fréquence,
             dateDébut: req.body.dateDébut,
-            dateFin: req.body.dateFin,
+            dateFin: req.body.dateFin
         });
 
-        const savedPrescription = await prescription.save();
-        console.log("saved presc : ", savedPrescription)
+        if (!patient._id.equals(new mongoose.Types.ObjectId(req.user.id))) {
+            prescription.provider = req.user.id;
+        }
+        await prescription.save();
+
         await db.Patient.updateOne(
             { _id: patient._id },
-            { $push: { prescriptions: savedPrescription._id } }
+            { $push: { prescriptions: prescription._id } }
         );
-        console.log("saved", savedPrescription.provider)
-        if (savedPrescription.provider === req.user.id) {
-            console.log(notification)
-            const notification = new db.Notification({
-                userId: savedPrescription.patient,
-                message: `You have a new prescription added by ${provider.name}`
+        if (prescription.provider !== null && prescription.provider.equals(new mongoose.Types.ObjectId(req.user.id))) {
+            const providerUser = await db.User.findById(req.user.id);
+            const providerNotification = new db.Notification({
+                userId: prescription.patient,
+                message: `You have a new ${prescription.médicament} added by ${providerUser.name}`,
             });
-            await notification.save();
-            const notificationData = {
-                id: notification._id,
-                fileId: savedPrescription._id,
-                title: 'New prescription added',
-                body: `You have a new prescription added by ${provider.name}`
+            await providerNotification.save();
+            const providerNotificationData = {
+                id: providerNotification._id,
+                fileId: prescription._id,
+                title: `New ${prescription.médicament} added `,
+                body: `You have a new ${prescription.médicament} added by ${providerUser.name}`,
             };
 
             await notificationAdmin.sendPushNotification(
-                savedPrescription.patient,
-                notificationData
+                prescription.patient,
+                providerNotificationData
             );
         }
 
-        /*
-                if (savedPrescription.sharedwith.length > 0) {
-                    const notifications = savedPrescription.sharedwith.map(userId => {
-                        const notification = new db.Notification({
-                            userId,
-                            message: `Your patient ${patient.name} added a new prescription`
-                        });
-                        return notification;
-                    });
-                    await db.Notification.insertMany(notifications);
-                    const notificationPromises = notifications.map((notification) => {
-                        const notificationData = {
-                            id: notification._id,
-                            fileId: savedPrescription._id,
-                            title: 'New prescription added',
-                            body: `Your patient ${patient.name} added a new prescription`,
-                        };
-                        return notificationAdmin.sendPushNotification(
-                            notification.userId,
-                            notificationData
-                        );
-                    });
-        
-                    Promise.all(notificationPromises)
-                        .then(() => {
-                            console.log('Notifications sent');
-                            res.status(200).json({ message: 'New prescription added successfully' });
-                        })
-                        .catch((error) => {
-                            console.error('Error sending notifications:', error);
-                            res
-                                .status(500)
-                                .json({ error: 'Failed to send notifications', message: 'New prescription added successfully' });
-                        });
-                }
-        */
-        console.log(savedPrescription),
-
-            res.status(201).json({ message: "New prescription added successfully", data: savedPrescription, _id: savedPrescription._id });
+        res.status(201).json({ message: "New prescription added successfully", data: prescription, _id: prescription._id });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while adding the prescription' });
@@ -221,7 +177,7 @@ const getlabresult = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved' &&
                     provider.type === 'Doctor'
             );
@@ -251,7 +207,7 @@ const getSymptomChecks = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved' &&
                     provider.type === 'Doctor'
             );
@@ -308,7 +264,7 @@ const getSurgeries = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved' &&
                     provider.type === 'Doctor'
             );
@@ -328,7 +284,6 @@ const getSurgeries = async (req, res) => {
 
 const addSurgery = async (req, res) => {
     try {
-        console.log(req.params)
         const patient = await db.Patient.findById(req.params.id);
 
         if (!patient) {
@@ -339,7 +294,7 @@ const addSurgery = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved' &&
                     provider.type === 'Doctor'
             );
@@ -348,43 +303,43 @@ const addSurgery = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized access' });
         }
 
-        let provider = null;
-
-        if (req.user.id !== patient._id) {
-            provider = req.user.id;
-        }
-
-        const surgery = new db.Surgery({
+        let surgery = new db.Surgery({
             patient: patient._id,
-            provider: provider,
             type: req.body.type,
-            date: req.body.date,
             description: req.body.description,
+            date: req.body.date,
             complications: req.body.complications,
+            sharedwith: req.body.sharedwith
         });
 
+        if (!patient._id.equals(new mongoose.Types.ObjectId(req.user.id))) {
+            surgery.provider = req.user.id;
+        }
         const savedSurgery = await surgery.save();
         await db.Patient.updateOne(
             { _id: patient._id },
             { $push: { surgeries: savedSurgery._id } }
         );
 
-        if (savedSurgery.provider === req.user.id) {
-            const notification = new db.Notification({
+
+        if (surgery.provider !== null && surgery.provider.equals(new mongoose.Types.ObjectId(req.user.id))
+        ) {
+            const providerUser = await db.User.findById(req.user.id);
+            const providerNotification = new db.Notification({
                 userId: savedSurgery.patient,
-                message: `You have a new surgery added by ${provider.name}`,
+                message: `You have a new surgery added by ${providerUser.name}`,
             });
-            await notification.save();
-            const notificationData = {
-                id: notification._id,
+            await providerNotification.save();
+            const providerNotificationData = {
+                id: providerNotification._id,
                 fileId: savedSurgery._id,
                 title: 'New surgery added',
-                body: `You have a new prescription added by ${provider.name}`
+                body: `You have a new surgery added by ${providerUser.name}`,
             };
 
             await notificationAdmin.sendPushNotification(
                 savedSurgery.patient,
-                notificationData
+                providerNotificationData
             );
         }
 
@@ -398,14 +353,12 @@ const addSurgery = async (req, res) => {
             return notification;
         }));
 
-        console.log("Notifications:", notifications);
-
 
         notifications.map((notification) => {
             const notificationData = {
                 id: notification._id,
                 fileId: savedSurgery._id,
-                title: 'New surgery added',
+                title: 'New lab result added',
                 body: `Your patient ${patient.name} added a new surgery`,
             };
             return notificationAdmin.sendPushNotification(
@@ -414,8 +367,7 @@ const addSurgery = async (req, res) => {
             );
         });
 
-        console.log('Notifications sent');
-        res.status(201).json({ message: 'New surgery added successfully', data: savedSurgery, _id: savedSurgery._id });
+        res.status(201).json({ message: 'New surgery added successfully', data: savedSurgery, _id: surgery._id });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while adding the surgery' });
@@ -424,6 +376,8 @@ const addSurgery = async (req, res) => {
 
 const addLabresult = async (req, res) => {
     try {
+        console.log(req.params)
+        console.log(req.body)
         const patient = await db.Patient.findById(req.params.id);
 
         if (!patient) {
@@ -434,24 +388,16 @@ const addLabresult = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved' &&
                     provider.type === 'Laboratoire'
             );
-
+        console.log(isAuthorized)
         if (!isAuthorized) {
             return res.status(403).json({ message: 'Unauthorized access' });
         }
-
-        let provider = null;
-
-        if (req.user.id !== patient._id) {
-            provider = req.user.id;
-        }
-
-        const labresult = new db.Labresult({
+        let labresult = new db.Labresult({
             patient: patient._id,
-            provider: provider,
             test: req.body.test,
             result: req.body.result,
             date: req.body.date,
@@ -459,16 +405,17 @@ const addLabresult = async (req, res) => {
             sharedwith: req.body.sharedwith
         });
 
+        if (!patient._id.equals(new mongoose.Types.ObjectId(req.user.id))) {
+            labresult.provider = req.user.id;
+        }
+
         const savedLabresult = await labresult.save();
 
         await db.Patient.updateOne(
             { _id: patient._id },
             { $push: { labresult: savedLabresult._id } }
         );
-
-        console.log("Saved LAB Shared With:", savedLabresult.sharedwith);
-
-        if (savedLabresult.provider !== null && savedLabresult.provider === req.user.id) {
+        if (labresult.provider !== null && labresult.provider.equals(new mongoose.Types.ObjectId(req.user.id))) {
             const providerUser = await db.User.findById(req.user.id);
             const providerNotification = new db.Notification({
                 userId: savedLabresult.patient,
@@ -478,7 +425,7 @@ const addLabresult = async (req, res) => {
             const providerNotificationData = {
                 id: providerNotification._id,
                 fileId: savedLabresult._id,
-                title: 'New lab result added',
+                title: `New ${savedLabresult.test} result added`,
                 body: `You have a new lab result added by ${providerUser.name}`,
             };
 
@@ -498,8 +445,6 @@ const addLabresult = async (req, res) => {
             return notification;
         }));
 
-        console.log("Notifications:", notifications);
-
 
         notifications.map((notification) => {
             const notificationData = {
@@ -514,8 +459,7 @@ const addLabresult = async (req, res) => {
             );
         });
 
-        console.log('Notifications sent');
-        res.status(200).json({ message: 'New lab result added successfully', _id: savedLabresult._id });
+        res.status(200).json({ message: 'New Analyse result added successfully', _id: savedLabresult._id });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while adding the lab result' });
@@ -534,7 +478,7 @@ const getRadiographies = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved' &&
                     provider.type === 'Doctor'
             );
@@ -564,7 +508,7 @@ const addRadiographie = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved' &&
                     provider.type === "Center d'imagerie Medicale"
             );
@@ -573,46 +517,44 @@ const addRadiographie = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized access' });
         }
 
-        let provider = null;
-
-        if (req.user.id !== patient._id) {
-            provider = req.user.id;
-        }
-
-        const radiographie = new db.Radiographies({
+        let radiographie = new db.Radiographies({
             patient: patient._id,
-            provider: provider,
             type: req.body.type,
             description: req.body.description,
             date: req.body.date,
             reason: req.body.reason,
+            sharedwith: req.body.sharedwith
         });
 
+        if (!patient._id.equals(new mongoose.Types.ObjectId(req.user.id))) {
+            radiographie.provider = req.user.id;
+        }
+
         const savedRadio = await radiographie.save();
+
         await db.Patient.updateOne(
             { _id: patient._id },
             { $push: { radiographies: savedRadio._id } }
         );
-
-
-        if (savedRadio.provider === req.user.id) {
-            const notification = new db.Notification({
+        if (radiographie.provider !== null && radiographie.provider.equals(new mongoose.Types.ObjectId(req.user.id))
+        ) {
+            const providerUser = await db.User.findById(req.user.id);
+            const providerNotification = new db.Notification({
                 userId: savedRadio.patient,
-                message: `You have a new ${savedRadio.type} added by ${provider.name}`,
+                message: `You have a new ${savedRadio.type} added by ${providerUser.name}`,
             });
-            await notification.save();
-            const notificationData = {
-                id: notification._id,
+            await providerNotification.save();
+            const providerNotificationData = {
+                id: providerNotification._id,
                 fileId: savedRadio._id,
                 title: `New ${savedRadio.type} added `,
-                body: `You have a new labresult added by ${provider.name}`
+                body: `You have a new ${savedRadio.type} added by ${providerUser.name}`,
             };
 
             await notificationAdmin.sendPushNotification(
                 savedRadio.patient,
-                notificationData
+                providerNotificationData
             );
-
         }
 
         const notifications = await Promise.all(savedRadio.sharedwith.map(async (name) => {
@@ -625,14 +567,12 @@ const addRadiographie = async (req, res) => {
             return notification;
         }));
 
-        console.log("Notifications:", notifications);
-
 
         notifications.map((notification) => {
             const notificationData = {
                 id: notification._id,
                 fileId: savedRadio._id,
-                title: 'New ${savedRadio.type} added',
+                title: `New ${savedRadio.type} added `,
                 body: `Your patient ${patient.name} added a new ${savedRadio.type}`,
             };
             return notificationAdmin.sendPushNotification(
@@ -640,6 +580,7 @@ const addRadiographie = async (req, res) => {
                 notificationData
             );
         });
+
         res.status(201).json({ message: `New ${savedRadio.type} added successfully`, data: savedRadio, _id: savedRadio._id });
     } catch (error) {
         console.error(error);
@@ -713,28 +654,28 @@ const getEmergencyContacts = async (req, res) => {
         const patient = await db.Patient.findById(req.params.id);
 
         if (!patient) {
-            return res.status(404).json({ message: 'Patient not found' });
+            return res.status(404).json({ status: false, message: 'Patient not found' });
         }
 
         const isAuthorized =
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved' &&
                     provider.type === 'Doctor'
             );
 
         if (!isAuthorized) {
-            return res.status(403).json({ message: 'Unauthorized access' });
+            return res.status(403).json({ status: false, message: 'Unauthorized access' });
         }
 
         const emergencyContacts = await db.EmergencyContact.find({ patient: patient._id });
 
-        res.status(200).json({ data: emergencyContacts });
+        res.status(200).json({ status: true, data: emergencyContacts });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching emergency contacts' });
+        res.status(500).json({ status: false, message: 'An error occurred while fetching emergency contacts' });
     }
 };
 
@@ -755,18 +696,22 @@ const addEmergencyContact = async (req, res) => {
 
         const savedEmergencyContact = await emergencyContact.save();
 
-        patient.emergencyContacts.push(savedEmergencyContact._id);
-        await patient.save();
+        await db.Patient.updateOne(
+            { _id: patient._id },
+            { $push: { emergencyContacts: emergencyContact._id } }
+        );
 
-        res.status(201).json({ data: savedEmergencyContact });
+
+        res.status(201).json({ status: true, data: savedEmergencyContact });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while adding the emergency contact' });
+        res.status(500).json({ status: false, message: 'An error occurred while adding the emergency contact' });
     }
 };
 
 const getPatientAllergies = async (req, res) => {
     try {
+        console.log(req.params)
         const patient = await db.Patient.findById(req.params.id);
 
         if (!patient) {
@@ -777,7 +722,7 @@ const getPatientAllergies = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved'
             );
 
@@ -786,8 +731,8 @@ const getPatientAllergies = async (req, res) => {
         }
 
         const allergies = await db.Allergy.find({ patient: patient._id });
-
-        res.json({ data: allergies });
+        console.log(allergies)
+        res.status(200).json({ status: true, data: allergies });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while retrieving the patient\'s allergies' });
@@ -796,6 +741,7 @@ const getPatientAllergies = async (req, res) => {
 
 const addAllergy = async (req, res) => {
     try {
+        console.log(req.user.id)
         const patient = await db.Patient.findById(req.user.id);
 
         if (!patient) {
@@ -838,7 +784,7 @@ const getPatientDiseases = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved'
             );
 
@@ -846,7 +792,10 @@ const getPatientDiseases = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized access' });
         }
 
-        const diseases = await db.Diseases.find({ patient: patient._id });
+        const diseases = await db.Diseases.find({ patient: patient._id }).sort({
+            yearOfDiscovery: -1,
+        });
+        console.log(diseases)
 
         res.json({ data: diseases, status: true });
     } catch (error) {
@@ -857,6 +806,7 @@ const getPatientDiseases = async (req, res) => {
 
 const addPatientDisease = async (req, res) => {
     try {
+        console.log(req.user.id)
         const patient = await db.Patient.findById(req.user.id);
 
         if (!patient) {

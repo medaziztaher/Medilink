@@ -27,9 +27,7 @@ class _PendingProvidersState extends State<PendingProviders> {
   }
 
   Future<void> pendingProvides() async {
-    setState(() {
-      isLoading = true;
-    });
+    
     try {
       final response = await networkHandler.get(pendingHealthcareprovidersPath);
       if (response['status'] == true) {
@@ -42,9 +40,7 @@ class _PendingProvidersState extends State<PendingProviders> {
     } catch (e) {
       print(e);
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      
     }
   }
 
@@ -76,9 +72,9 @@ class _PendingProvidersState extends State<PendingProviders> {
   }
 
   Future<void> _initializeUser() async {
-    // _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
-    pendingProvides();
-    //});
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
+      pendingProvides();
+    });
   }
 
   @override
@@ -99,9 +95,7 @@ class _PendingProvidersState extends State<PendingProviders> {
                   backgroundImage: CachedNetworkImageProvider(user.picture!),
                 ),
                 title: Text(user.name!),
-                subtitle: user.role == 'Patient'
-                    ? Text(user.email!)
-                    : Text('${user.type}'),
+                subtitle: Text(user.verification ?? ""),
                 trailing: ElevatedButton(
                   onPressed: () {
                     approve(user.id!);

@@ -2,8 +2,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:medilink_client/settings/realtime.dart';
 import 'package:medilink_client/widgets/home/home_screen.dart';
-import 'package:medilink_client/widgets/test.dart';
+
 import 'api/user.dart';
 import 'firebase/api/authentififcation.dart';
 import 'firebase/api/notification.dart';
@@ -37,13 +38,83 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final SocketMethods _socket = SocketMethods();
   late Future<ConnectivityResult> _connectivityResult;
+  final socket = SocketClient.instance.socket!;
 
   @override
   void initState() {
     super.initState();
     _connectivityResult = checkInternet();
     _addConnectedUser();
-    _socket.subscribeToEvents(context);
+    _setupSocketListeners();
+  }
+
+  void _setupSocketListeners() {
+    socket.on('followRequestError', (data) {
+      if (mounted) {
+        Get.snackbar("followRequestError",
+            "You already have a healthcare provider with the same specialty.");
+      }
+    });
+    socket.on('followRequest', (data) {
+      if (mounted) {
+        Get.snackbar("followRequest", data);
+      }
+    });
+    socket.on('followRequestReceived', (data) {
+      if (mounted) {
+        Get.snackbar("followRequestReceived", data);
+      }
+    });
+    socket.on('followApprovedReceived', (data) {
+      if (mounted) {
+        Get.snackbar("followApprovedReceived", data);
+      }
+    });
+    socket.on('followApproved', (data) {
+      if (mounted) {
+        Get.snackbar("followApproved", data);
+      }
+    });
+    socket.on('requestCanceled', (data) {
+      if (mounted) {
+        Get.snackbar("requestCanceled", data);
+      }
+    });
+    socket.on('followCanceled', (data) {
+      if (mounted) {
+        Get.snackbar("followCanceled", data);
+      }
+    });
+    socket.on('unfollowRequest', (data) {
+      if (mounted) {
+        Get.snackbar("unFollowRequest", data);
+      }
+    });
+    socket.on('unfollowSuccessPatient', (data) {
+      if (mounted) {
+        Get.snackbar("unFollowSuccess", data);
+      }
+    });
+    socket.on('unfollowSuccessReceived', (data) {
+      if (mounted) {
+        Get.snackbar("unFollowSuccessReceived", data);
+      }
+    });
+    socket.on('unfollowSuccess', (data) {
+      if (mounted) {
+        Get.snackbar("unFollowSuccess", data);
+      }
+    });
+    socket.on('rjectedRequest', (data) {
+      if (mounted) {
+        Get.snackbar("rejectedRequest", data);
+      }
+    });
+    socket.on('rejectRequest', (data) {
+      if (mounted) {
+        Get.snackbar("rejectRequest", data);
+      }
+    });
   }
 
   Future<ConnectivityResult> checkInternet() async {
@@ -73,7 +144,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-     final controller = Get.put(MyLocaleController());
+    final controller = Get.put(MyLocaleController());
     final hasToken = Pref().prefs!.getString(kTokenSave) != null;
 
     return FutureBuilder<ConnectivityResult>(

@@ -46,17 +46,23 @@ class ProviderForm extends StatelessWidget {
                               FormError(errors: controller.errors),
                               SizedBox(
                                   height: getProportionateScreenHeight(40)),
-                              DefaultButton(
-                                text: "kContinue".tr,
-                                press: () => controller.completeProfile(),
-                              )
+                              Obx(() {
+                                if (controller.isLoading.value == false) {
+                                  return DefaultButton(
+                                    text: "kbutton1".tr,
+                                    press: () async {
+                                      controller.completeProfile();
+                                    },
+                                  );
+                                } else {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                              }),
+                              SizedBox(
+                                  height: getProportionateScreenHeight(20)),
                             ]));
                       }),
-                  Text(
-                    "kconditions".tr,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
                 ])))));
   }
 

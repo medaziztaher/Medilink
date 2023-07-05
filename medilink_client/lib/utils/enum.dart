@@ -1,1 +1,1 @@
-enum MenuState {home,messenger,calendrie,notifications,rapports,search}
+enum MenuState {home,messenger,calendrie,profile}

@@ -1,5 +1,6 @@
 const db = require('../models/models')
 const notificationAdmin = require('./push_notification')
+const mongoose = require('mongoose');
 
 const addAppointment = async (req, res) => {
   try {
@@ -14,7 +15,7 @@ const addAppointment = async (req, res) => {
       return res.status(404).json({ message: 'Provider not found' });
     }
 
-    const isAuthorized = provider.patients.some(
+    /*const isAuthorized = provider.patients.some(
       (patient) =>
         patient.patientId === req.user.id &&
         patient.status === 'Approved'
@@ -23,7 +24,7 @@ const addAppointment = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized access' });
     }
-
+*/
     const appointment = new db.Appointment({
       patient: req.user.id,
       provider: req.params.id,
@@ -34,36 +35,40 @@ const addAppointment = async (req, res) => {
 
     const savedAppointment = await appointment.save();
 
-    provider.appointment.push(savedAppointment._id);
-    patient.appointment.push(savedAppointment._id);
+    await db.Patient.updateOne(
+      { _id: patient._id },
+      { $push: { appointment: savedAppointment._id } }
+    );
+    await db.HealthcareProvider.updateOne(
+      { _id: provider._id },
+      { $push: { appointment: savedAppointment._id } }
+    );
+
+
 
     await provider.save();
     await patient.save();
 
     const notification = new db.Notification({
       userId: provider._id,
-      message: `You have a new appointment request from ${patient.name} at ${savedAppointment.time} ${savedAppointment.date}`,
+      message: `You have a new appointment from ${patient.name} at ${savedAppointment.time}${savedAppointment.date}`,
     });
     await notification.save();
-
-    const userId = provider._id;
     const notificationData = {
       id: notification._id,
       fileId: savedAppointment._id,
-      title: 'New Appointment',
-      body: `You have a new appointment request from ${patient.name} at ${savedAppointment.time} ${savedAppointment.date}`,
+      title: `New Appointment added `,
+      body: `You have a new appointment from ${patient.name} at ${savedAppointment.time}${savedAppointment.date}`
     };
 
-    notificationAdmin
-      .sendPushNotification(userId, notificationData)
-      .then(() => {
-        console.log('Notification sent');
-        res.status(201).json({ message: 'Appointment added successfully' });
-      })
-      .catch((error) => {
-        console.error('Error sending notification:', error);
-        res.status(500).json({ error: 'Failed to send notification' });
-      });
+    await notificationAdmin.sendPushNotification(
+      provider._id,
+      notificationData
+    )
+
+
+
+    res.status(200).json({ status: true, _id: savedAppointment._id, patientId: savedAppointment.patient })
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'An error occurred while adding the appointment' });
@@ -71,7 +76,7 @@ const addAppointment = async (req, res) => {
 };
 
 const getTodayAppointments = async (req, res) => {
-  const userId = req.userId;
+  const userId = req.user.id;
   try {
     const today = new Date();
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -98,34 +103,12 @@ const getTodayAppointments = async (req, res) => {
     const patient = await db.User.findById(appointments.patient)
     const provider = await db.User.findById(appointments.provider)
 
-    res.send({ data: appointments, provider: provider, patient: patient });
+    res.status(200).json({ status: true, data: appointments, provider: provider, patient: patient });
   } catch (err) {
     console.error(err);
-    res.status(500).send(err);
+    res.status(500).json(err);
   }
 }
-
-const getAppointment = async (req, res) => {
-  try {
-    const appointment = await db.Appointment.findById(req.params.id);
-
-    if (!appointment) {
-      return res.status(404).json({ message: 'appointment not found' });
-    }
-
-    const isAuthorized =
-      appointment.patient === req.user.id ||
-      appointment.provider === req.user.id;
-
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized access' });
-    }
-    res.status(200).json({ data: appointment });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while fetching the appointment' });
-  }
-};
 
 const updateAppointment = async (req, res) => {
   try {
@@ -136,8 +119,8 @@ const updateAppointment = async (req, res) => {
     }
 
     const isAuthorized =
-      appointment.patient === req.user.id ||
-      appointment.provider === req.user.id;
+      appointment.patient.toString() === req.user.id ||
+      appointment.provider.toString() === req.user.id;
 
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized access' });
@@ -159,7 +142,11 @@ const updateAppointment = async (req, res) => {
     } else {
       recipientId = appointment.patient;
       recipientName = provider.name;
-      isDoctor = true;
+      if (provider.type === 'Doctor') {
+        isDoctor = true
+      } else {
+        isDoctor = false
+      }
     }
     const notification = new db.Notification({
       userId: recipientId,
@@ -184,7 +171,6 @@ const updateAppointment = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while updating the appointment' });
   }
 };
-
 const deleteAppointment = async (req, res) => {
   try {
     const appointment = await db.Appointment.findById(req.params.appointmentId);
@@ -234,82 +220,174 @@ const deleteAppointment = async (req, res) => {
     };
     await notificationAdmin.sendPushNotification(userId, notificationData)
 
-    await appointment.remove()
+    await db.Appointment.deleteOne({ _id: appointment._id })
 
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'An error occurred while deleting the appointment' });
   }
 };
+/*
+const getSheduledTimes = async (req, res) => {
+  const { date } = req.body;
+  const { providerId } = req.params;
 
-const getPatientAppointments = async (req, res) => {
   try {
-    const patient = await db.Patient.findById(req.params.patientId);
+    const appointments = await db.Appointment.find({ date, provider: providerId }, 'time');
+    const times = appointments.map(appointment => appointment.time);
 
-    if (!patient) {
-      return res.status(404).json({ message: 'Patient not found' });
-    }
-
-    if (patient._id !== req.user.id) {
-      return res.status(403).json({ message: 'Unauthorized access' });
-    }
-
-    const appointments = await db.Appointment.find({ patient: patient._id });
-
-    const today = new Date();
-    for (let i = 0; i < appointments.length; i++) {
-      const appointment = appointments[i];
-      if (appointment.date < today && appointment.status === 'Scheduled') {
-        appointment.status = 'Completed';
-        await appointment.save();
-      }
-    }
-
-    res.status(200).json({ data: appointments });
+    res.status(200).json({ status: true, data: times });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'An error occurred while fetching the patient appointments' });
+    res.status(500).json({ error: 'An error occurred' });
   }
 };
-
-const getProviderAppointments = async (req, res) => {
+*/
+const getcompletedAppointment = async (req, res) => {
+  const userId = req.user.id;
   try {
-    const provider = await db.HealthcareProvider.findById(req.params.providerId);
+    /*const today = new Date();
+    let appointment = await db.Appointment.findById(userId)
+    for (let i = 0; i < appointment.length; i++) {
+      const app = appointment[i];
+      if (app.date < today && app.status === 'Scheduled') {
+        app.status = 'Completed';
+        await app.save();
+      }
+    }*/
+    const appointments = await db.Appointment.find({
+      $or: [{ patient: userId }, { provider: userId }],
+      status: 'Completed'
+    })
+    console.log(appointments)
+    const patient = await db.User.findById(appointments.patient)
+    const provider = await db.User.findById(appointments.provider)
 
-    if (!provider) {
-      return res.status(404).json({ message: 'Healthcare provider not found' });
+    res.status(200).json({ status: true, data: appointments, provider: provider, patient: patient });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(err);
+  }
+}
+const getcancelledAppointment = async (req, res) => {
+  const userId = req.user.id;
+  console.log(userId)
+  try {
+    /*const today = new Date();
+    let appointment = await db.Appointment.findById(userId)
+    for (let i = 0; i < appointment.length; i++) {
+      const app = appointment[i];
+      if (app.date < today && app.status === 'Scheduled') {
+        app.status = 'Completed';
+        await app.save();
+      }
+    }*/
+    const appointments = await db.Appointment.find({
+      $or: [{ patient: userId }, { provider: userId }],
+      status: 'Cancelled'
+    })
+    console.log(appointment)
+    const patient = await db.User.findById(appointments.patient)
+    const provider = await db.User.findById(appointments.provider)
+
+    res.status(200).json({ status: true, data: appointments, provider: provider, patient: patient });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
+  }
+}
+const getsheduledAppointment = async (req, res) => {
+  const userId = req.user.id;
+  console.log(userId)
+  try {
+
+    const appointments = await db.Appointment.find({
+      $or: [{ patient: userId }, { provider: userId }],
+      status: 'Scheduled'
+    })
+    const patient = await db.User.findById(appointments.patient)
+    const provider = await db.User.findById(appointments.provider)
+
+    res.status(200).json({ status: true, data: appointments, provider: provider, patient: patient });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
+  }
+}
+const cancelAppointment = async (req, res) => {
+  try {
+    console.log(req.params.appointmentId)
+    const appointment = await db.Appointment.findByIdAndUpdate(
+      { _id: req.params.appointmentId },
+      { $set: { status: "Cancelled" } },
+      { new: true });
+    await appointment.save()
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
     }
+    const isAuthorized =
+      (appointment.patient.toString() === req.user.id ||
+        (appointment.provider && appointment.provider.toString() === req.user.id))
 
-    if (provider._id !== req.user.id) {
+console.log(isAuthorized)
+    if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized access' });
     }
+    const provider = await db.HealthcareProvider.findById(appointment.provider);
+    const patient = await db.Patient.findById(appointment.patient);
 
-    const appointments = await db.Appointment.find({ provider: provider._id });
+    let recipientId, recipientName, isDoctor;
 
-    const today = new Date();
-    for (let i = 0; i < appointments.length; i++) {
-      const appointment = appointments[i];
-      if (appointment.date < today && appointment.status === 'Scheduled') {
-        appointment.status = 'Completed';
-        await appointment.save();
+    if (appointment.patient.equals(new mongoose.Types.ObjectId(req.user.id))) {
+      recipientId = appointment.provider;
+      recipientName = patient.name;
+      isDoctor = false;
+    } else {
+      recipientId = appointment.patient;
+      recipientName = provider.name;
+      if (provider.type === 'Doctor') {
+        isDoctor = true
+      } else {
+        isDoctor = false
       }
     }
+    console.log("receipent ", recipientId)
 
-    res.status(200).json({ data: appointments });
+    const notification = new db.Notification({
+      userId: recipientId,
+      message: `Your appointment with${isDoctor ? ' Dr.' : ''} ${recipientName} has been canceled`,
+    });
+
+    await notification.save();
+
+    const userId = recipientId;
+    const notificationData = {
+      id: notification._id,
+      fileId: appointment._id,
+      title: 'Updated Appointment',
+      body: `Your appointment with${isDoctor ? ' Dr.' : ''} ${recipientName} has been cancelled`,
+    };
+
+    await notificationAdmin
+      .sendPushNotification(userId, notificationData)
+
+
+    res.status(200).json({ status: true, message: 'Appointment canceled with success' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'An error occurred while fetching the provider appointments' });
+    res.status(500).json({ error: 'An error occurred while updating the appointment' });
   }
-};
-
+}
 const appointment = {
   addAppointment,
-  getAppointment,
-  updateAppointment,
+  //getSheduledTimes,
+  getTodayAppointments,
   deleteAppointment,
-  getPatientAppointments,
-  getProviderAppointments,
-  getTodayAppointments
+  updateAppointment,
+  getcancelledAppointment,
+  getcompletedAppointment,
+  getsheduledAppointment,
+  cancelAppointment
 }
 
 module.exports = appointment

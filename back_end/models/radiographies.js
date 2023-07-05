@@ -8,7 +8,6 @@ const mriRecordSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   reason: { type: String, required: true },
   result: [{
-    id: String,
     url: String
   }],
   sharedwith : [{type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false }]

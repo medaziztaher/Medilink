@@ -18,65 +18,57 @@ class DoctorForm extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: getProportionateScreenWidth(20),
-          ),
+          padding:
+              EdgeInsets.symmetric(horizontal: getProportionateScreenWidth(20)),
           child: SingleChildScrollView(
             child: Column(
               children: [
                 SizedBox(height: SizeConfig.screenHeight * 0.03),
-                Text("complete".tr, style: headingStyle),
+                Text("kcomplet".tr, style: headingStyle),
                 SizedBox(height: SizeConfig.screenHeight * 0.02),
                 ProfilePic(),
+                SizedBox(height: SizeConfig.screenHeight * 0.02),
                 GetBuilder<CompleteProfileController>(
-                  init: CompleteProfileController(),
-                  builder: (controller) {
-                    return Form(
-                      key: controller.formKeyCompleteProfile,
-                      child: Column(
-                        children: [
-                          buildGenderFormField(controller),
-                          SizedBox(height: getProportionateScreenHeight(15)),
-                          buildAddressFormField(controller),
-                          SizedBox(height: getProportionateScreenHeight(15)),
-                          buildPhoneNumberFormField(controller),
-                          SizedBox(height: getProportionateScreenHeight(15)),
-                          buildspecializationFormField(controller),
-                          SizedBox(height: getProportionateScreenHeight(15)),
-                          buildVerificationFormField(controller),
-                          SizedBox(height: getProportionateScreenHeight(15)),
-                          builddescriptionFormField(controller),
-                          SizedBox(height: getProportionateScreenHeight(15)),
-                          FormError(errors: controller.errors),
-                          SizedBox(height: getProportionateScreenHeight(40)),
-                          /*GestureDetector(
-                            onTap: () {
-                              Get.to(MoreDetails());
-                            },
-                            child: Text(
-                              "more details",
-                              style: TextStyle(
-                                fontSize: getProportionateScreenWidth(20),
-                                color: kPrimaryColor,
-                              ),
-                            ),
-                          ),*/
-                          DefaultButton(
-                            text: "Continue",
-                            press: () {
-                              controller.completeProfile();
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                Text(
-                  "conditions".tr,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                    init: CompleteProfileController(),
+                    builder: (controller) {
+                      return Form(
+                        key: controller.formKeyCompleteProfile,
+                        child: Column(
+                          children: [
+                            buildGenderFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            buildAddressFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            buildPhoneNumberFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            buildspecializationFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            buildAppointmentPriceFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            buildVerificationFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            builddescriptionFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(10)),
+                            FormError(errors: controller.errors),
+                            SizedBox(height: getProportionateScreenHeight(40)),
+                            Obx(() {
+                              if (controller.isLoading.value == false) {
+                                return DefaultButton(
+                                  text: "kbutton1".tr,
+                                  press: () async {
+                                    controller.completeProfile();
+                                  },
+                                );
+                              } else {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                            }),
+                            SizedBox(height: getProportionateScreenHeight(20)),
+                          ],
+                        ),
+                      );
+                    }),
               ],
             ),
           ),
@@ -99,6 +91,30 @@ class DoctorForm extends StatelessWidget {
         floatingLabelBehavior: FloatingLabelBehavior.always,
         suffixIcon: Icon(Icons.phone_android),
       ),
+    );
+  }
+
+  Row buildAppointmentPriceFormField(CompleteProfileController controller) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: TextFormField(
+            keyboardType: TextInputType.phone,
+            onSaved: (newValue) => controller.appointmentPrice.text = newValue!,
+            controller: controller.appointmentPrice,
+            decoration: InputDecoration(
+              labelText: "Appointment Price",
+              hintText: "Enter your appointment price",
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+            ),
+          ),
+        ),
+        SizedBox(width: getProportionateScreenWidth(5)),
+        Expanded(
+          child: Text("TND"),
+        ),
+      ],
     );
   }
 
@@ -151,23 +167,6 @@ class DoctorForm extends StatelessWidget {
       ),
     );
   }
-/*
-  TextFormField buildspecializationFormField(
-      CompleteProfileController controller) {
-    return TextFormField(
-      onSaved: (newValue) =>
-          controller.specializationController.text = newValue!,
-      onChanged: (value) => controller.onChangedspecialization(value),
-      validator: (value) => controller.validatespecialization(value),
-      controller: controller.specializationController,
-      decoration: InputDecoration(
-        labelText: "kspecialization".tr,
-        hintText: "Enter your speciality",
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: Icon(Icons.medical_services_rounded),
-      ),
-    );
-  }*/
 
   TextFormField builddescriptionFormField(
       CompleteProfileController controller) {

@@ -2,7 +2,6 @@ const db = require('../models/models')
 
 
 const profilePicture = async (req, res) => {
-    console.log(req.file.filename)
     try {
         const user = await db.User.findOneAndUpdate(
             { _id: req.user.id },
@@ -50,27 +49,16 @@ const addBuildingPicture = async (req, res) => {
     try {
         const providerId = req.user.id;
         const pictureUrl = req.file.filename;
-        console.log('user :', req.user.id)
-        console.log("req.file ", req.file)
 
-        const provider = await db.HealthcareProvider.findOneAndUpdate(
-            { _id: providerId },
-            {
-                $push: {
-                    buildingpictures: { url: pictureUrl },
-                },
-                $set: {
-                    picture: pictureUrl,
-                },
-            },
-            { new: true }
-        );
+        const provider = await db.HealthcareProvider.findOne({ _id: providerId });
 
-        console.log("provider : ", provider)
+        provider.buildingpictures.push({ url: pictureUrl });
+
+        const updatedProvider = await provider.save();
 
         const response = {
             message: 'Image successfully added',
-            data: provider,
+            data: updatedProvider,
         };
 
         return res.status(200).json(response);
@@ -86,7 +74,7 @@ const updateBuildingPicture = async (req, res) => {
         const pictureUrl = req.file.filename;
 
         const provider = await db.HealthcareProvider.findOneAndUpdate(
-            { _id: providerId, 'buildingpictures.id': pictureId },
+            { _id: providerId, 'buildingpictures.url': pictureId },
             { $set: { 'buildingpictures.$.url': pictureUrl } },
             { new: true }
         );
@@ -113,7 +101,7 @@ const deleteBuildingPicture = async (req, res) => {
 
         const provider = await db.HealthcareProvider.findOneAndUpdate(
             { _id: providerId },
-            { $pull: { buildingpictures: { id: pictureId } } },
+            { $pull: { buildingpictures: { url: pictureId } } },
             { new: true }
         );
 
@@ -220,12 +208,13 @@ const addSurgeryFile = async (req, res) => {
     try {
         const surgeryId = req.params.surgeryId;
         const fileUrl = req.file.filename;
-
+console.log(surgeryId)
+console.log(fileUrl)
         const surgery = await db.Surgery.findOneAndUpdate(
             { _id: surgeryId },
             {
                 $push: {
-                    files: { id: { $size: '$files' }, url: fileUrl },
+                    files: {url: fileUrl },
                 },
             },
             { new: true }
@@ -280,7 +269,7 @@ const deleteSurgeryFile = async (req, res) => {
 
         const surgery = await db.Surgery.findOneAndUpdate(
             { _id: surgeryId },
-            { $pull: { files: { _id: fileId } } },
+            { $pull: { files: { url: fileId } } },
             { new: true }
         );
 
@@ -577,8 +566,6 @@ const deleteEducationFile = async (req, res) => {
 };
 const addlabFile = async (req, res) => {
     try {
-        console.log(req.file)
-        console.log(req.params)
         const labId = req.params.labId;
         const fileUrl = req.file.filename;
 
@@ -586,7 +573,7 @@ const addlabFile = async (req, res) => {
             labId,
             {
                 $push: {
-                    files: { id: fileUrl, url: fileUrl },
+                    files: { url: fileUrl },
                 },
             },
             { new: true }
@@ -614,7 +601,7 @@ const updateLabresultFile = async (req, res) => {
         const fileUrl = req.file.filename;
 
         const labresult = await db.Labresult.findOneAndUpdate(
-            { _id: labId, 'files.id': fileId },
+            { _id: labId, 'files.url': fileId },
             { $set: { 'files.$.url': fileUrl } },
             { new: true }
         );
@@ -638,31 +625,34 @@ const deleteLabresultFile = async (req, res) => {
     try {
         const labId = req.params.labId;
         const fileId = req.params.fileId;
+        console.log('Removing file:', fileId, 'from lab result:', labId);
 
-        const labresult = await labresult.findOneAndUpdate(
-            { _id: labId },
-            { $pull: { files: { id: fileId } } },
+        const fileName = fileId; 
+        console.log('File name:', fileName);
+
+        const labresult = await db.Labresult.findOneAndUpdate(
+             labId ,
+            { $pull: { files: { url: fileName } } },
             { new: true }
         );
+        console.log('Updated labresult:', labresult);
 
         if (!labresult) {
-            return res.status(404).json({ message: 'labresult or file not found' });
+            console.log('Lab result not found');
+            return res.status(404).json({ message: 'Lab result or file not found' });
         }
 
         const response = {
-            message: 'File successfully deleted from labresult',
+            message: 'File successfully deleted from lab result',
             data: labresult,
         };
 
         return res.status(200).json(response);
     } catch (err) {
+        console.log('Error deleting file:', err);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
-
-
-
-
 const filepatch = {
     profilePicture,
     addlabFile,

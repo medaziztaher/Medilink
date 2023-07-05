@@ -8,7 +8,6 @@ import '../../../utils/size_config.dart';
 import '../../forget_password/options/model.dart';
 import '../signin_controller.dart';
 
-
 class SignIn extends StatelessWidget {
   const SignIn({Key? key}) : super(key: key);
 
@@ -91,8 +90,10 @@ TextFormField buildEmailFormField(SignInController controller) {
 }
 
 TextFormField buildPasswordFormField(SignInController controller) {
+  bool isPasswordVisible = !controller.passToggle.value;
+
   return TextFormField(
-    obscureText: !controller.passToggle.value,
+    obscureText: isPasswordVisible,
     onSaved: (newValue) => controller.passwordController.text = newValue!,
     onChanged: (value) {
       controller.onChangedPassword(value);
@@ -105,7 +106,14 @@ TextFormField buildPasswordFormField(SignInController controller) {
       labelText: "kpassword".tr,
       hintText: "kpasswordhint".tr,
       floatingLabelBehavior: FloatingLabelBehavior.always,
-      suffixIcon: const Icon(Icons.vpn_key),
+      suffixIcon: IconButton(
+        icon: Icon(
+          isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+        ),
+        onPressed: () {
+          controller.togglePasswordVisibility();
+        },
+      ),
     ),
   );
 }

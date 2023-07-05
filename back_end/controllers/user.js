@@ -1,5 +1,8 @@
 const db = require('../models/models')
 const notificationAdmin = require('./push_notification')
+const SALT = process.env.AUTH_SALT;
+const bcrypt = require('bcrypt');
+
 
 
 const userData = async (req, res) => {
@@ -29,14 +32,13 @@ const searchProfile = async (req, res) => {
             ],
             _id: { $ne: req.user.id }
         };
-        console.log("req.search : ", req.body);
+
         let user = await db.User.findById(req.user.id);
         if (user.role === "Patient") {
             query.role = { $nin: ["Patient", "Admin"] };
             const users = await db.User.find(query);
-            console.log("user: ", users);
-
-            res.status(200).json(users);
+            console.log(users)
+            res.status(200).json({ status: true, date: users });
 
         } else if (user.role === 'HealthcareProvider' && Array.isArray(user.patients)) {
 
@@ -46,13 +48,12 @@ const searchProfile = async (req, res) => {
                 { role: 'HealthcareProvider' }
             ];
             const users = await db.User.find(query);
-            res.status(200).json(users);
+            res.status(200).json({ status: true, date: users });
         } else {
-console.log("true")
-            res.status(201).json({ status: true });
+            res.status(201).json({ status: false, message: 'no user found' });
         }
     } catch (err) {
-        console.log("Error : ",err.message)
+
         res.status(501).json(err.message);
     }
 };
@@ -77,6 +78,7 @@ const userProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
 
+
         const user = await db.Patient.findById(req.user.id) || await db.HealthcareProvider.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -93,11 +95,17 @@ const updateProfile = async (req, res) => {
             const profileFields = ['address', 'phoneNumber', 'email', 'password', 'gender', 'firstname', 'lastname', 'dateofbirth', 'civilstate', 'nembredenfant'];
 
 
-            profileFields.forEach((field) => {
+            await Promise.all(profileFields.map(async (field) => {
                 if (req.body[field]) {
-                    profileUpdates[field] = req.body[field];
+                    if (field == 'password') {
+                        const salt = await bcrypt.genSalt(SALT);
+                        const hashedPassword = await bcrypt.hash(req.body[field], salt);
+                        profileUpdates[field] = hashedPassword;
+                    } else {
+                        profileUpdates[field] = req.body[field];
+                    }
                 }
-            });
+            }));
 
         } else if (user instanceof db.HealthcareProvider) {
 
@@ -105,7 +113,7 @@ const updateProfile = async (req, res) => {
 
             if (user.type === 'Doctor') {
 
-                profileFields = ['address', 'phoneNumber', 'email', 'password', 'gender', 'firstname', 'lastname', 'speciality', 'description', 'verifciation'];
+                profileFields = ['address', 'phoneNumber', 'email', 'password', 'gender', 'firstname', 'lastname', 'speciality', 'description', 'verifciation', 'appointmentprice'];
 
             } else {
 
@@ -113,11 +121,17 @@ const updateProfile = async (req, res) => {
             }
 
 
-            profileFields.forEach((field) => {
+            await Promise.all(profileFields.map(async (field) => {
                 if (req.body[field]) {
-                    profileUpdates[field] = req.body[field];
+                    if (field == 'password') {
+                        const salt = await bcrypt.genSalt(SALT);
+                        const hashedPassword = await bcrypt.hash(req.body[field], salt);
+                        profileUpdates[field] = hashedPassword;
+                    } else {
+                        profileUpdates[field] = req.body[field];
+                    }
                 }
-            });
+            }));
         }
 
 
@@ -153,7 +167,7 @@ const checkUser = async (req, res) => {
     try {
         const userID = req.params.userID;
         let user;
-        console.log("user : ", userID)
+
 
         if (req.userRole === 'Patient') {
             user = await db.Patient.findById(req.user.id).lean();
@@ -183,7 +197,6 @@ const checkUser = async (req, res) => {
             }
 
             const follower = await db.User.findById(userID);
-
             if (!follower) {
                 return res.status(404).json({ message: 'User not found' });
             }
@@ -203,6 +216,7 @@ const checkUser = async (req, res) => {
 
                 return res.status(200).json({ status: true, message: "Ok", data: patient });
             } else if (follower.role === 'HealthcareProvider') {
+                console.log(follower.role);
                 const colleague = user.healthcareproviders.find(
                     (colleague) => colleague.healthcareproviderId.toString() === userID
                 );
@@ -306,7 +320,7 @@ const getDeviceToken = async (req, res) => {
     try {
         const userId = req.params.id;
         const token = req.body.token;
-        console.log(token);
+
 
         let user = await db.User.findOneAndUpdate(
             { _id: userId },
@@ -319,7 +333,7 @@ const getDeviceToken = async (req, res) => {
         }
 
         await user.save();
-        console.log(user);
+
         res.status(200).json(user);
     } catch (error) {
         console.error('Error updating device token:', error);

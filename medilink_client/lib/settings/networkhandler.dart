@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import '../utils/constatnts.dart';
 import '../utils/global.dart';
 import '../utils/prefs.dart';
+
 class NetworkHandler {
   final prefs = Pref();
   var log = Logger();
@@ -85,7 +86,23 @@ class NetworkHandler {
     return response;
   }
 
+  Future<http.Response> delete(String url) async {
+    final baseurl = Uri.parse(url);
+    final String? file = globalToken;
+    String? token;
 
+    if (file != null) {
+      token = file;
+    } else {
+      token = prefs.prefs!.getString(kTokenSave);
+    }
+
+    var response = await http.delete(
+      baseurl,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    return response;
+  }
 
   Future<http.StreamedResponse> patchImage(String url, String filePath) async {
     final String? file = globalToken;

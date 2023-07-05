@@ -8,8 +8,6 @@ const addUserMetric = async (req, res) => {
         const healthMetric = new db.HealthMetric({ patient, metricName, value });
         await healthMetric.save();
 
-        const user = await db.Patient.findById(req.user.id);
-        console.log(user);
 
         await db.Patient.updateOne(
             { _id: req.user.id },
@@ -25,13 +23,11 @@ const addUserMetric = async (req, res) => {
 
 const getUserMetric = async (req, res) => {
     try {
-        console.log(req.params);
         const patient = req.params.patientId;
         const metricName = req.params.metricName;
 
         const healthMetrics = await db.HealthMetric.find({ patient, metricName })
             .sort({ date: 1 });
-        console.log(healthMetrics);
         res.json({ status: true, data: healthMetrics });
     } catch (error) {
         console.error(error);

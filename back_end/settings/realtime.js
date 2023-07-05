@@ -14,9 +14,9 @@ const addUser = async (userId, socketId) => {
       return;
     }
 
-    console.log("User updated:", user);
+
   } catch (error) {
-    console.log("Error adding/updating user:", error);
+
   }
 };
 const addNotification = async (userId, notification) => {
@@ -37,23 +37,23 @@ const addNotification = async (userId, notification) => {
       notificationData
     );
 
-    console.log("Notification added:", notification);
+
   } catch (error) {
-    console.log("Error adding notification:", error);
+
   }
 };
 
 const getUserNotifications = async (userId) => {
   try {
     const userNotifications = await db.Notification.find({ userId: userId, read: false });
-    console.log("User notifications:", userNotifications);
+
 
     await db.Notification.updateMany({ userId }, { $set: { read: true } });
-    console.log("Notifications marked as read.");
+
 
     return userNotifications;
   } catch (error) {
-    console.log("Error getting user notifications:", error);
+
     return [];
   }
 };
@@ -67,13 +67,13 @@ const removeUser = async (socketId) => {
     );
 
     if (!user) {
-      console.log("User not found:", socketId);
+
       return;
     }
 
-    console.log("Socket ID removed for user:", user._id);
+
   } catch (error) {
-    console.log("Error removing user:", error);
+
   }
 };
 
@@ -82,14 +82,14 @@ const getConnectedUser = async (userId) => {
   try {
     const user = await db.User.findOne({ _id: userId, connected: true });
     if (user) {
-      console.log("Connected user found:", user);
+
       return user;
     } else {
-      console.log("User not connected");
+
       return null;
     }
   } catch (error) {
-    console.log("Error getting connected user:", error);
+
     return null;
   }
 };
@@ -101,7 +101,6 @@ const realtime = (io) => {
     socket.on('deleteNotification', async (notificationId) => {
       try {
         await db.Notification.findByIdAndDelete(notificationId);
-        console.log(`Deleted notification with ID: ${notificationId}`);
       } catch (error) {
         console.error('Error deleting notification:', error);
       }
@@ -111,7 +110,6 @@ const realtime = (io) => {
       try {
         await addUser(userId, socket.id);
 
-        console.log("Add user: works");
 
 
         io.to(socket.id).emit(
@@ -119,7 +117,7 @@ const realtime = (io) => {
           await getUserNotifications(userId)
         );
       } catch (error) {
-        console.log("Error adding user:", error);
+
       }
     });
     socket.on("sendMessage", async ({ senderId, receiverId, content }) => {
@@ -129,7 +127,6 @@ const realtime = (io) => {
 
       messageSent = await mesasge.createMessageIo(senderId, receiverId, content);
 
-      console.log("message : ", messageSent);
       if (receiverSocket && receiverSocket.socketId) {
         socket.to(receiverSocket.socketId).emit("getMessage", {
           senderId: senderId,
@@ -152,7 +149,7 @@ const realtime = (io) => {
     });
 
     socket.on("follow", async (data) => {
-      console.log("Follow event triggered");
+
       const { patientId, providerId } = data;
 
       try {
@@ -178,14 +175,14 @@ const realtime = (io) => {
           { $addToSet: { patients: { patientId: patientId, status: "Pending" } } },
           { new: true }
         );
-        console.log("Updated provider:", updatedProvider);
+
 
         const updatedPatient = await db.Patient.findByIdAndUpdate(
           patientId,
           { $addToSet: { healthcareproviders: { healthcareproviderId: providerId, status: "Pending", type: provider.type, speciality: provider.speciality } } },
           { new: true }
         );
-        console.log("Updated patient:", updatedPatient);
+
 
         if (!updatedPatient || !updatedProvider) {
           throw new Error("Patient or provider not found.");
@@ -212,28 +209,28 @@ const realtime = (io) => {
         };
         await addNotification(providerId, notificationData);
 
-        console.log("Notification added");
+
       } catch (error) {
-        console.log("Error following:", error);
+
       }
     });
     socket.on("approveRequest", async (data) => {
       const { patientId, providerId } = data;
-      console.log(data)
+
       try {
         const patient = await db.Patient.findOneAndUpdate(
           { _id: patientId, "healthcareproviders.healthcareproviderId": providerId },
           { $set: { "healthcareproviders.$.status": "Approved" } },
           { new: true }
         );
-        console.log("Approved patient:", patient);
+
 
         const provider = await db.HealthcareProvider.findOneAndUpdate(
           { _id: providerId, "patients.patientId": patientId },
           { $set: { "patients.$.status": "Approved" } },
           { new: true }
         );
-        console.log("Approved provider:", provider);
+
 
         if (!patient || !provider) {
           throw new Error("Patient or provider not found.");
@@ -261,7 +258,7 @@ const realtime = (io) => {
 
 
       } catch (error) {
-        console.log("Error approving request:", error);
+
       }
     });
     socket.on("cancelRequest", async (data) => {
@@ -272,13 +269,13 @@ const realtime = (io) => {
           { $pull: { healthcareproviders: { healthcareproviderId: providerId } } },
           { new: true }
         );
-        console.log("Updated patient:", patient);
+
         const provider = await db.HealthcareProvider.findByIdAndUpdate(
           providerId,
           { $pull: { patients: { patientId: patientId } } },
           { new: true }
         );
-        console.log("Updated provider:", provider);
+
 
         if (!patient || !provider) {
           throw new Error("Patient or provider not found.");
@@ -297,7 +294,7 @@ const realtime = (io) => {
           `you have  canceled the follow request to ${provider.name}.`
         )
       } catch (error) {
-        console.log("Error canceling request:", error);
+
       }
     });
     socket.on("unfollow", async (data) => {
@@ -442,7 +439,7 @@ const realtime = (io) => {
         console.log(`Disconnected: ${socket.id}`);
         removeUser(socket.id)
       } catch (error) {
-        console.log("Error during user disconnection:", error);
+
       }
     });
   });

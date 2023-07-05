@@ -1,5 +1,3 @@
-
-
 import '../services/path.dart';
 import '../utils/constatnts.dart';
 
@@ -24,9 +22,9 @@ class User {
   String? description;
   String? reviews;
   String? verification;
-  String? dateofbirth;
+  DateTime? dateofbirth;
   String? civilstate;
-  String? nembredenfant;
+  int? nembredenfant;
   String? role;
   List<String>? education;
   List<String>? experience;
@@ -46,162 +44,127 @@ class User {
   List<Map<String, Object?>>? patients;
   List<Map<String, Object?>>? healthcareproviders;
 
-  User(
-      {this.id,
-      this.name,
-      this.email,
-      this.password,
-      this.role,
-      this.appointment,
-      this.address,
-      this.phoneNumber,
-      this.picture,
-      this.gender,
-      this.type,
-      this.availability,
-      this.buildingpictures,
-      this.dateofbirth,
-      this.description,
-      this.education,
-      this.emergencyContacts,
-      this.experience,
-      this.firstname,
-      this.healthcareproviders,
-      this.lastname,
-      this.patients,
-      this.prescriptions,
-      this.allergys,
-      this.diseases,
-      this.healthcareMetrics,
-      this.radiographies,
-      this.ratings,
-      this.speciality,
-      this.status,
-      this.surgeries,
-      this.symptomChecks,
-      this.reviews,
-      this.verification,
-      this.civilstate,
-      this.nembredenfant,
-      this.appointmentprice,
-      this.connected,
-      this.deviceToken,
-      this.labresult,
-      this.socketId});
+  User({
+    this.id,
+    this.name,
+    this.email,
+    this.password,
+    this.role,
+    this.appointment,
+    this.address,
+    this.phoneNumber,
+    this.picture,
+    this.gender,
+    this.type,
+    this.availability,
+    this.buildingpictures,
+    this.dateofbirth,
+    this.description,
+    this.education,
+    this.emergencyContacts,
+    this.experience,
+    this.firstname,
+    this.healthcareproviders,
+    this.lastname,
+    this.patients,
+    this.prescriptions,
+    this.allergys,
+    this.diseases,
+    this.healthcareMetrics,
+    this.radiographies,
+    this.ratings,
+    this.speciality,
+    this.status,
+    this.surgeries,
+    this.symptomChecks,
+    this.reviews,
+    this.verification,
+    this.civilstate,
+    this.nembredenfant,
+    this.appointmentprice,
+    this.connected,
+    this.deviceToken,
+    this.labresult,
+    this.socketId,
+  });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    List<String>? appointments;
-    if (json['appointment'] != null) {
-      appointments = List<String>.from(json['appointment']);
-    }
+    List<String>? appointments = json['appointment'] != null
+        ? List<String>.from(json['appointment'])
+        : [];
 
-    List<String>? allergys;
-    if (json['allergys'] != null) {
-      allergys = List<String>.from(json['allergys']);
-    }
+    List<String>? allergys =
+        json['allergys'] != null ? List<String>.from(json['allergys']) : [];
 
-    List<String>? analyses;
-    if (json['analyses'] != null) {
-      analyses = List<String>.from(json['analyses']);
-    }
+    List<String>? diseases =
+        json['diseases'] != null ? List<String>.from(json['diseases']) : [];
 
-    List<String>? diseases;
-    if (json['diseases'] != null) {
-      diseases = List<String>.from(json['diseases']);
-    }
+    List<String>? healthcareMetrics = json['healthcareMetrics'] != null
+        ? List<String>.from(json['healthcareMetrics'])
+        : [];
 
-    List<String>? healthcareMetrics;
-    if (json['healthcareMetrics'] != null) {
-      healthcareMetrics = List<String>.from(json['healthcareMetrics']);
-    }
+    List<String>? radiographies = json['radiographies'] != null
+        ? List<String>.from(json['radiographies'])
+        : [];
 
-    List<String>? radiographies;
-    if (json['radiographies'] != null) {
-      radiographies = List<String>.from(json['radiographies']);
-    }
+    List<String>? surgeries =
+        json['surgeries'] != null ? List<String>.from(json['surgeries']) : [];
 
-    List<String>? surgeries;
-    if (json['surgeries'] != null) {
-      surgeries = List<String>.from(json['surgeries']);
-    }
+    List<String>? symptomChecks = json['symptomChecks'] != null
+        ? List<String>.from(json['symptomChecks'])
+        : [];
 
-    List<String>? healthjournals;
-    if (json['healthjournals'] != null) {
-      healthjournals = List<String>.from(json['healthjournals']);
-    }
+    List<String>? prescriptions = json['prescriptions'] != null
+        ? List<String>.from(json['prescriptions'])
+        : [];
 
-    List<String>? symptomChecks;
-    if (json['symptomChecks'] != null) {
-      symptomChecks = List<String>.from(json['symptomChecks']);
-    }
+    List<String>? ratings =
+        json['ratings'] != null ? List<String>.from(json['ratings']) : [];
 
-    List<String>? prescriptions;
-    if (json['prescriptions'] != null) {
-      prescriptions = List<String>.from(json['prescriptions']);
-    }
+    List<String>? emergencyContacts = json['emergencyContacts'] != null
+        ? List<String>.from(json['emergencyContacts'])
+        : [];
 
-    List<String>? ratings;
-    if (json['ratings'] != null) {
-      ratings = List<String>.from(json['ratings']);
-    }
+    List<Map<String, Object?>>? patients = json['patients'] != null
+        ? (json['patients'] as List<dynamic>).map((item) {
+            return {
+              'patientId': item['patientId'],
+              'status': item['status'] ?? 'Pending',
+            };
+          }).toList()
+        : [];
 
-    List<String>? medicalRecords;
-    if (json['medicalRecords'] != null) {
-      medicalRecords = List<String>.from(json['medicalRecords']);
-    }
-
-    List<String>? emergencyContacts;
-    if (json['emergencyContacts'] != null) {
-      emergencyContacts = List<String>.from(json['emergencyContacts']);
-    }
-
-    List<Map<String, Object?>>? patients;
-    if (json['patients'] != null) {
-      patients = [];
-      for (var patient in json['patients']) {
-        patients.add({
-          'patientId': patient['patientId'],
-          'status': patient['status'] ?? 'Pending',
-        });
-      }
-    }
-
-    List<Map<String, Object?>>? healthcareproviders;
-    if (json['healthcareproviders'] != null) {
-      healthcareproviders = [];
-      for (var provider in json['healthcareproviders']) {
-        healthcareproviders.add({
-          'healthcareproviderId': provider['patientId'],
-          'status': provider['status'] ?? 'Pending',
-        });
-      }
-    }
+    List<Map<String, Object?>>? healthcareproviders =
+        json['healthcareproviders'] != null
+            ? (json['healthcareproviders'] as List<dynamic>).map((item) {
+                return {
+                  'healthcareproviderId': item['patientId'],
+                  'status': item['status'] ?? 'Pending',
+                };
+              }).toList()
+            : [];
 
     String? userPic = json['picture'];
     userPic = userPic != null ? "$profilePicPath/$userPic" : kProfile;
 
     List<BuildingPicture>? buildingpictures = json['buildingpictures'] != null
-        ? (json['buildingpictures'] as List<dynamic>).map((item) {
-            String id = item['id'];
+        ? (json['buildingpictures'] as List<dynamic>)
+            .map<BuildingPicture>((item) {
+            String id = item['_id'];
             String url = "$buildingpicsPath/${item['url']}";
             return BuildingPicture(id: id, url: url);
           }).toList()
         : [];
 
-    List<String>? education;
-    if (json['education'] != null) {
-      education = List<String>.from(json['education']);
-    }
+    List<String>? education =
+        json['education'] != null ? List<String>.from(json['education']) : [];
 
-    List<String>? experience;
-    if (json['experience'] != null) {
-      experience = List<String>.from(json['experience']);
-    }
+    List<String>? experience =
+        json['experience'] != null ? List<String>.from(json['experience']) : [];
 
-    List<String>? availability;
-    if (json['availability'] != null) {
-      availability = List<String>.from(json['availability']);
-    }
+    List<String>? availability = json['availability'] != null
+        ? List<String>.from(json['availability'])
+        : [];
 
     return User(
       id: json['_id'] as String?,
@@ -212,21 +175,29 @@ class User {
       appointment: appointments,
       address: json['address'] as String?,
       phoneNumber: json['phoneNumber'] as String?,
-      picture: userPic,
-      gender: json['gender'] as String?,
-      type: json['type'] as String?,
+      picture: json['type'] != 'Doctor' &&
+              json['role'] == 'HealthcareProvider' &&
+              buildingpictures.isNotEmpty
+          ? buildingpictures[0].url
+          : json['picture'] != ""
+              ? "$profilePicPath/${json['picture']}"
+              : "",
+      gender: json['gender'] as String? ?? "",
+      type: json['type'] as String? ?? "",
       availability: availability,
       buildingpictures: buildingpictures,
-      dateofbirth: json['dateofbirth'] as String?,
+      dateofbirth: json['dateofbirth'] != null
+          ? DateTime.parse(json['dateofbirth'])
+          : null,
       description: json['description'] as String?,
       reviews: json['reviews'] as String?,
       verification: json['verification'] as String?,
-      civilstate: json['civilstate'] as String?,
-      nembredenfant: json['nembredenfant'] as String?,
+      civilstate: json['civilstate'] as String? ?? "",
+      nembredenfant: json['nembredenfant'] as int? ?? 0,
       status: json['status'] as String?,
-      firstname: json['firstname'] as String?,
-      lastname: json['lastname'] as String?,
-      speciality: json['speciality'] as String?,
+      firstname: json['firstname'] as String? ?? "",
+      lastname: json['lastname'] as String? ?? "",
+      speciality: json['speciality'] as String? ?? "",
       education: education,
       experience: experience,
       ratings: ratings,

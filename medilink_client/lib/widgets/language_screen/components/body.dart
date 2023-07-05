@@ -70,7 +70,7 @@ class Body extends StatelessWidget {
             Align(
               alignment: Alignment.bottomCenter,
               child: DefaultButton(
-                text: "Continue",
+                text: "kbutton1".tr,
                 press: () {
                   Get.to(() => const SplashScreen());
                 },

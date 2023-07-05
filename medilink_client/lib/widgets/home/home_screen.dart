@@ -1,6 +1,7 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:medilink_client/models/user.dart';
+
 import 'package:medilink_client/utils/size_config.dart';
 import 'package:medilink_client/widgets/home/doctor/doctor_screen.dart';
 import 'package:medilink_client/widgets/home/homeController.dart';
@@ -17,30 +18,45 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
-    return GetBuilder<HomeData>(
-        init: HomeData(),
-        builder: (controller) {
-          return Scaffold(
-              drawer: Obx(() {
-                if (controller.isLoading.value) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                return CustomDrawer(user: controller.user);
-              }),
-              body: Obx(() {
-                if (controller.isLoading.value) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (controller.user.role == 'Patient') {
-                  return PatientHomeScreen(user: controller.user);
-                } else if (controller.user.type == 'Doctor') {
-                  return DoctorHomeScreen(user: controller.user);
-                } else {
-                  return ProviderHomeScreen(user: controller.user);
-                }
-              }),
-              bottomNavigationBar:
-                  const CustomBottomNavBar(selectedMenu: MenuState.home));
+    return StreamBuilder<ConnectivityResult>(
+        stream: Connectivity().onConnectivityChanged,
+        builder: (context, snapshot) {
+          if (snapshot.data == ConnectivityResult.none) {
+            return Scaffold(
+              body: Center(
+                child: AlertDialog(
+                  title: Text('No Internet Connection'),
+                  content: Text('Please check your internet connection.'),
+                ),
+              ),
+            );
+          } else {
+            return GetBuilder<HomeData>(
+                init: HomeData(),
+                builder: (controller) {
+                  return Scaffold(
+                      drawer: Obx(() {
+                        if (controller.isLoading.value) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        return CustomDrawer(user: controller.user);
+                      }),
+                      body: Obx(() {
+                        if (controller.isLoading.value) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        if (controller.user.role == 'Patient') {
+                          return PatientHomeScreen(user: controller.user);
+                        } else if (controller.user.type == 'Doctor') {
+                          return DoctorHomeScreen(user: controller.user);
+                        } else {
+                          return ProviderHomeScreen(user: controller.user);
+                        }
+                      }),
+                      bottomNavigationBar: const CustomBottomNavBar(
+                          selectedMenu: MenuState.home));
+                });
+          }
         });
   }
 }

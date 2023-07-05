@@ -24,12 +24,11 @@ class SignInController extends GetxController {
   final pref = Pref();
   final auth = Auth.instance;
 
- 
-
   Future<void> submitForm() async {
     isLoading.value = true;
     removeError("kerror1".tr);
     removeError("kerror2".tr);
+    print("password : ${passwordController.text}");
     Map<String, String> data = {
       'email': emailController.text,
       'password': passwordController.text,
@@ -40,19 +39,31 @@ class SignInController extends GetxController {
         if (response.statusCode == 200 || response.statusCode == 201) {
           final responseData = json.decode(response.body);
           final token = responseData['token'];
-          setGlobalUserId(responseData['information']['_id']);
-          await _socket.addUser(globalUserId);
-
-          if (isRememberMe.value == true) {
-            pref.prefs!.setString(kTokenSave, token);
+          final message = responseData['message'];
+          final status = responseData['success'];
+          if (status == false) {
+            Get.snackbar("Admin Verification", message);
           } else {
-            setGlobalToken(token);
+            setGlobalUserId(responseData['information']['_id']);
+            await _socket.addUser(globalUserId);
+
+            if (isRememberMe.value == true) {
+              pref.prefs!.setString(kTokenSave, token);
+            } else {
+              setGlobalToken(token);
+            }
+            Get.offAll(() => LoginSuccessScreen());
+            await pushDeviceToken();
           }
-          Get.offAll(() => LoginSuccessScreen());
-          await pushDeviceToken();
+        } else if (response.statusCode == 404) {
+          final responseData = json.decode(response.body);
+          final message = responseData['message'];
+          addError(message);
+          passwordController.clear();
         } else {
           final errorMessageValue = json.decode(response.body)['message'];
-          addError(errorMessageValue);
+          print(errorMessageValue);
+          //addError(errorMessageValue);
           passwordController.clear();
         }
       }

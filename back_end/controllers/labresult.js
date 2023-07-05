@@ -1,91 +1,79 @@
 const db = require('../models/models')
 const notificationAdmin = require('./push_notification')
+const mongoose = require('mongoose');
 
 const updateLabresult = async (req, res) => {
     try {
-        const labresult = await db.Labresult.findById(req.params.id);
+        const labresult = await db.Labresult.findOneAndUpdate(
+            { _id: req.params.id },
+            { $set: { test: req.body.test, result: req.body.result, date: req.body.date, reason: req.body.reason, sharedwith: req.body.sharedwith } },
+            { new: true }
+        );
 
         if (!labresult) {
             return res.status(404).json({ message: 'labresult not found' });
         }
-
+        await labresult.save()
         const isAuthorized =
-            labresult.patient === req.user.id ||
-            labresult.provider === req.user.id;
+            (labresult.patient.toString() === req.user.id ||
+                (labresult.provider && labresult.provider.toString() === req.user.id))
 
+        console.log(isAuthorized)
         if (!isAuthorized) {
             return res.status(403).json({ message: 'Unauthorized access' });
         }
 
-        const labresultUpdates = {};
-        const labresultFields = ['test', 'result', 'date', 'reason', 'sharedwith'];
 
-        labresultFields.forEach((field) => {
-            if (req.body[field]) {
-                labresultUpdates[field] = req.body[field];
-            }
-        });
-
-        Object.assign(labresult, labresultUpdates);
-        await labresult.save();
         const patient = await db.Patient.findById(labresult.patient);
-        const provider = await db.HealthcareProvider.findById(req.user.id);
 
-        if (labresult.provider === req.user.id) {
-            const notification = new db.Notification({
+        if (labresult.provider !== null && labresult.provider.equals(new mongoose.Types.ObjectId(req.user.id))) {
+            const providerUser = await db.User.findById(req.user.id);
+            const providerNotification = new db.Notification({
                 userId: labresult.patient,
-                message: `Your lab result (${labresult._id}) has been updated by ${provider.name}`,
+                message: `Your lab result (${labresult.test}) has been updated by ${providerUser.name}`,
+            });
+            await providerNotification.save();
+            const providerNotificationData = {
+                id: providerNotification._id,
+                fileId: labresult._id,
+                title: 'Updated Lab Result',
+                body: `Your lab result (${labresult.test}) has been updated by ${providerUser.name}`,
+            };
+
+            await notificationAdmin.sendPushNotification(
+                labresult.patient,
+                providerNotificationData
+            );
+        }
+
+        const notifications = await Promise.all(labresult.sharedwith.map(async (name) => {
+            const user = await db.User.findOne({ name: name });
+            const notification = new db.Notification({
+                userId: user._id,
+                message: `The lab result (${labresult.test}) of the patient (${patient.name}) has been updated`,
             });
             await notification.save();
+            return notification;
+        }));
 
+
+        notifications.map((notification) => {
             const notificationData = {
                 id: notification._id,
                 fileId: labresult._id,
                 title: 'Updated Lab Result',
-                body: `Your lab result (${labresult._id}) has been updated`,
+                body: `The lab result (${labresult.test}) of the patient (${patient.name}) has been updated`,
             };
-            await notificationAdmin.sendPushNotification(
-                labresult.patient,
+            return notificationAdmin.sendPushNotification(
+                notification.userId,
                 notificationData
             );
-        }
+        });
 
-        if (labresult.sharedwith.length > 0) {
-            const notifications = labresult.sharedwith.map((userId) => {
-                return new db.Notification({
-                    userId,
-                    message: `The lab result (${labresult._id}) of the patient (${patient.name}) has been updated`,
-                });
-            });
-            await db.Notification.insertMany(notifications);
 
-            const notificationPromises = notifications.map((notification) => {
-                const notificationData = {
-                    id: notification._id,
-                    fileId: labresult._id,
-                    title: 'Updated Lab Result',
-                    body: `The lab result (${labresult._id}) has been updated`,
-                };
-                return notificationAdmin.sendPushNotification(
-                    notification.userId,
-                    notificationData
-                );
-            });
 
-            Promise.all(notificationPromises)
-                .then(() => {
-                    console.log('Notifications sent');
-                    res.status(200).json({ message: 'Lab result updated successfully' });
-                })
-                .catch((error) => {
-                    console.error('Error sending notifications:', error);
-                    res
-                        .status(500)
-                        .json({ error: 'Failed to send notifications', message: 'Lab result updated successfully' });
-                });
-        } else {
-            res.status(200).json({ message: 'Lab result updated successfully', _id: savedLabresult._id });
-        }
+        res.status(200).json({ message: 'Lab result updated successfully', _id: labresult._id });
+
     } catch (error) {
         console.error(error);
         res
@@ -96,6 +84,7 @@ const updateLabresult = async (req, res) => {
 
 const deleteLabresult = async (req, res) => {
     try {
+        console.log(req.params)
         const labresult = await db.Labresult.findById(req.params.id);
 
         if (!labresult) {
@@ -103,75 +92,20 @@ const deleteLabresult = async (req, res) => {
         }
 
         const isAuthorized =
-            labresult.patient === req.user.id ||
-            labresult.provider === req.user.id;
+            labresult.patient.toString() === req.user.id ||
+            labresult.provider.toString() === req.user.id;
 
         if (!isAuthorized) {
             return res.status(403).json({ message: 'Unauthorized access' });
         }
-
-        const patient = await db.Patient.findById(labresult.patient);
-        patient.labresult.pull(labresult._id);
+        const patient = await db.Patient.findByIdAndUpdate(
+            labresult.patient,
+            { $pull: { labresult: { type: labresult._id } } },
+            { new: true }
+        );
         await patient.save();
-
-        const provider = await db.HealthcareProvider.findById(req.user.id);
-
-        if (labresult.provider === req.user.id) {
-            const notification = new db.Notification({
-                userId: labresult.patient,
-                message: `Your lab result (${labresult._id}) has been deleted by ${provider.name}`,
-            });
-            await notification.save();
-
-            const notificationData = {
-                id: notification._id,
-                title: 'Deleted Lab Result',
-                body: `Your lab result (${labresult._id}) has been deleted`,
-            };
-            await notificationAdmin.sendPushNotification(
-                labresult.patient,
-                notificationData
-            );
-        }
-
-        if (labresult.sharedwith.length > 0) {
-            const notifications = labresult.sharedwith.map((userId) => {
-                return new db.Notification({
-                    userId,
-                    message: `The lab result (${labresult._id}) of the patient (${patient.name}) has been deleted`,
-                });
-            });
-            await db.Notification.insertMany(notifications);
-
-            const notificationPromises = notifications.map((notification) => {
-                const notificationData = {
-                    id: notification._id,
-                    title: 'Deleted Lab Result',
-                    body: `The lab result (${labresult._id}) has been deleted`,
-                };
-                return notificationAdmin.sendPushNotification(
-                    notification.userId,
-                    notificationData
-                );
-            });
-
-            Promise.all(notificationPromises)
-                .then(() => {
-                    console.log('Notifications sent');
-                    res.status(200).json({ message: 'Lab result deleted successfully' });
-                })
-                .catch((error) => {
-                    console.error('Error sending notifications:', error);
-                    res
-                        .status(500)
-                        .json({ error: 'Failed to send notifications', message: 'Lab result deleted successfully' });
-                });
-        } else {
-            res.status(200).json({ message: 'Lab result deleted successfully' });
-        }
-
-        await labresult.remove();
-
+        await db.Labresult.deleteOne({ _id: labresult._id })
+        res.status(200).json({ message: `Labresult deleted successfully` });
     } catch (error) {
         console.error(error);
         res
@@ -193,7 +127,7 @@ const getlabresultById = async (req, res) => {
             patient._id.toString() === req.user.id ||
             patient.healthcareproviders.some(
                 provider =>
-                    provider.healthcareproviderId === req.user.id &&
+                    provider.healthcareproviderId.toString() === req.user.id &&
                     provider.status === 'Approved'
             );
 
@@ -207,6 +141,7 @@ const getlabresultById = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while fetching the labresult' });
     }
 };
+
 const getLabProviderName = async (req, res) => {
     try {
         const labresult = await db.Labresult.findById(req.params.id);

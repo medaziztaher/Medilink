@@ -6,7 +6,7 @@ const medicalConditionSchema = new mongoose.Schema({
   genetic: { type: Boolean, default: false },
   chronicDisease: { type: Boolean, default: false },
   detectedIn: { type: Date },
-  curedIn: { type: Date },
+  curedIn: { type: Date},
   notes: { type: String },
 });
 

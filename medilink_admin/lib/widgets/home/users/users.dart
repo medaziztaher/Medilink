@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:medilink_admin/utils/constatnts.dart';
 
 import '../../../models/user.dart';
 import '../../../services/networkhandler.dart';
@@ -18,18 +19,16 @@ class _UsersState extends State<Users> {
   bool isLoading = false;
   NetworkHandler networkHandler = NetworkHandler();
   List<User> users = [];
-  // Timer? _timer;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-   _initializeUser();
+    _initializeUser();
   }
 
   Future<void> getusers() async {
-    setState(() {
-      isLoading = true;
-    });
+    
     try {
       final response = await networkHandler.get(usersPath);
       if (response['status'] == true) {
@@ -41,9 +40,7 @@ class _UsersState extends State<Users> {
     } catch (e) {
       print(e);
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      
     }
   }
 
@@ -62,16 +59,17 @@ class _UsersState extends State<Users> {
       });
     }
   }
-@override
+
+  @override
   void dispose() {
     super.dispose();
-   // _timer?.cancel();
+    _timer?.cancel();
   }
 
   Future<void> _initializeUser() async {
-    //_timer = Timer.periodic(Duration(seconds: 1), (timer) async {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
       getusers();
-    //});
+    });
   }
 
   @override
@@ -89,12 +87,14 @@ class _UsersState extends State<Users> {
               final user = users[index];
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundImage: CachedNetworkImageProvider(user.picture!),
+                  backgroundImage: user.picture != null
+                      ? CachedNetworkImageProvider(user.picture!)
+                      : Image.asset(kProfile) as ImageProvider,
                 ),
                 title: Text(user.name!),
                 subtitle: user.role == 'Patient'
                     ? Text(user.email!)
-                    : Text('${user.type}'),
+                    : Text(user.type ?? ""),
                 trailing: ElevatedButton(
                   onPressed: () async {
                     deleteUser(user.id!);

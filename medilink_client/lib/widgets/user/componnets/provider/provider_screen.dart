@@ -32,101 +32,79 @@ class _ProviderScreenState extends State<ProviderScreen> {
   @override
   void initState() {
     super.initState();
-    setRole();
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    logedinuserole = globalRole;
+    if (logedinuserole == null) {
+      logedinuserole = await queryUserRole();
+    }
     _checkUser();
     _setupSocketListeners();
   }
 
-  void setRole() async {
-    final String? globrole = globalRole;
-    String? role;
-    if (globrole != null) {
-      role = globrole;
-    } else {
-      role = await queryUserRole();
-    }
-    setState(() {
-      logedinuserole = role;
-    });
-    print(logedinuserole);
-  }
-
   void _setupSocketListeners() {
     socket.on('followRequestError', (data) {
-      if (mounted) {
-        Get.snackbar("followRequestError",
-            "You already have a healthcare provider with the same specialty.");
-      }
+      if (mounted) {}
     });
     socket.on('followRequest', (data) {
       if (mounted) {
-        Get.snackbar("followRequest", data);
         _checkUser();
       }
     });
     socket.on('followRequestReceived', (data) {
       if (mounted) {
-        Get.snackbar("followRequestReceived", data);
         _checkUser();
       }
     });
     socket.on('followApprovedReceived', (data) {
       if (mounted) {
-        Get.snackbar("followApprovedReceived", data);
         _checkUser();
       }
     });
     socket.on('followApproved', (data) {
       if (mounted) {
-        Get.snackbar("followApproved", data);
         _checkUser();
       }
     });
     socket.on('requestCanceled', (data) {
       if (mounted) {
-        Get.snackbar("requestCanceled", data);
         _checkUser();
       }
     });
     socket.on('followCanceled', (data) {
       if (mounted) {
-        Get.snackbar("followCanceled", data);
         _checkUser();
       }
     });
     socket.on('unfollowRequest', (data) {
       if (mounted) {
-        Get.snackbar("unFollowRequest", data);
         _checkUser();
       }
     });
     socket.on('unfollowSuccessPatient', (data) {
       if (mounted) {
-        Get.snackbar("unFollowSuccess", data);
         _checkUser();
       }
     });
     socket.on('unfollowSuccessReceived', (data) {
       if (mounted) {
-        Get.snackbar("unFollowSuccessReceived", data);
         _checkUser();
       }
     });
     socket.on('unfollowSuccess', (data) {
       if (mounted) {
-        Get.snackbar("unFollowSuccess", data);
         _checkUser();
       }
     });
     socket.on('rjectedRequest', (data) {
       if (mounted) {
-        Get.snackbar("rejectedRequest", data);
         _checkUser();
       }
     });
     socket.on('rejectRequest', (data) {
       if (mounted) {
-        Get.snackbar("rejectRequest", data);
         _checkUser();
       }
     });
@@ -152,11 +130,10 @@ class _ProviderScreenState extends State<ProviderScreen> {
       child: Column(
         children: [
           Padding(
-           padding: EdgeInsets.symmetric(horizontal: 10),
-            child: Stack(
-              children: [
-                Padding(
-               padding: EdgeInsets.symmetric(vertical: 10),
+            padding: EdgeInsets.symmetric(horizontal: 10),
+            child: Stack(children: [
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
                 child: Column(
                   children: [
                     Container(
@@ -180,25 +157,28 @@ class _ProviderScreenState extends State<ProviderScreen> {
                                       const Duration(milliseconds: 800),
                                   autoPlayCurve: Curves.fastOutSlowIn,
                                   enlargeCenterPage: true,
-                                  enlargeStrategy: CenterPageEnlargeStrategy.height,
+                                  enlargeStrategy:
+                                      CenterPageEnlargeStrategy.height,
                                   scrollDirection: Axis.horizontal,
                                 ),
                                 items: widget.user.buildingpictures!
                                     .map((buildingPicture) {
-                                  return Builder(builder: (BuildContext context) {
+                                  return Builder(
+                                      builder: (BuildContext context) {
                                     return Container(
                                       width: MediaQuery.of(context).size.width,
-                                      margin:
-                                          const EdgeInsets.symmetric(horizontal: 1.0),
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 1.0),
                                       child: CachedNetworkImage(
-                                        imageUrl: buildingPicture.url,
+                                        imageUrl: buildingPicture,
                                         height: 50,
                                         fit: BoxFit.cover,
                                         errorWidget: (context, url, error) =>
                                             const Center(
                                           child: Text('Error loading image.'),
                                         ),
-                                        placeholder: (context, url) => Container(
+                                        placeholder: (context, url) =>
+                                            Container(
                                           color: Colors.grey[300],
                                         ),
                                       ),
@@ -218,71 +198,39 @@ class _ProviderScreenState extends State<ProviderScreen> {
                         color: Colors.blue,
                       ),
                     ),
-                    logedinuserole == "Patient"
-                        ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ButtonSection(
-                                userId: widget.user.id!,
-                                message: message,
-                                onFollow: () async {
-                                  String? senderId = await queryUserID();
-                                  print('Follow clicked. SenderId: $senderId');
-                                  _socket.followUser(senderId!, widget.user.id!);
-                                },
-                                onUnfollow: () async {
-                                  String? senderId = await queryUserID();
-                                  print('Unfollow clicked. SenderId: $senderId');
-                                  _socket.unfollowUser(senderId!, widget.user.id!);
-                                },
-                                onCancelRequest: () async {
-                                  String? senderId = await queryUserID();
-                                  print('Cancel request clicked. SenderId: $senderId');
-                                  _socket.cancelRequest(senderId!, widget.user.id!);
-                                },
-                              ),
-                          ],
-                        )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: const BoxDecoration(
-                                  color: Color.fromARGB(255, 151, 198, 226),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.call,
-                                  color: Colors.white,
-                                  size: 25,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: const BoxDecoration(
-                                  color: Color.fromARGB(255, 151, 198, 226),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: GestureDetector(
-                                  onTap: () => Get.to(() =>
-                                      IndividualScreen(userId: widget.user.id!)),
-                                  child: const Icon(
-                                    CupertinoIcons.chat_bubble_text_fill,
-                                    color: Colors.white,
-                                    size: 25,
-                                  ),
-                                ),
-                              ),
-                            ],
+                    if (logedinuserole == "Patient") ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ButtonSection(
+                            userId: widget.user.id!,
+                            message: message,
+                            onFollow: () async {
+                              String? senderId = await queryUserID();
+                              print('Follow clicked. SenderId: $senderId');
+                              _socket.followUser(senderId!, widget.user.id!);
+                            },
+                            onUnfollow: () async {
+                              String? senderId = await queryUserID();
+                              print('Unfollow clicked. SenderId: $senderId');
+                              _socket.unfollowUser(senderId!, widget.user.id!);
+                            },
+                            onCancelRequest: () async {
+                              String? senderId = await queryUserID();
+                              print(
+                                  'Cancel request clicked. SenderId: $senderId');
+                              _socket.cancelRequest(senderId!, widget.user.id!);
+                            },
                           ),
+                        ],
+                      )
+                    ]
                   ],
                 ),
               ),
-                  ]),
+            ]),
           ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
           Expanded(
             child: Container(
               height: MediaQuery.of(context).size.height / 1.5,
@@ -373,50 +321,6 @@ class _ProviderScreenState extends State<ProviderScreen> {
                   ),
                   SizedBox(height: 20),
                   Spacer(),
-                  Center(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        padding: const EdgeInsets.only(right: 15),
-                        height: 100,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          /*boxShadow: [
-                            BoxShadow(
-                              blurRadius: 4,
-                              spreadRadius: 2,
-                            ),
-                          ],*/
-                        ),
-                        child: Column(
-                          children: [
-                            InkWell(
-                              onTap: () {},
-                              child: Container(
-                                width: MediaQuery.of(context).size.width,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 18),
-                                decoration: BoxDecoration(
-                                  color: kPrimaryColor,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    "Book Appointment",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

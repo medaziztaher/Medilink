@@ -3,15 +3,15 @@ const db = require("../models/models");
 const getNotifications = async (req, res) => {
   try {
     const notifications = await db.Notification.find({ userId: req.user.id, read: false });
-    
+
     await db.Notification.updateMany(
       { userId: req.user.id, read: false },
       { read: true }
     );
 
-    res.status(200).json(notifications);
+    res.status(200).json({ data: notifications, status: true });
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json({ status: false, error: err });
   }
 };
 

@@ -13,7 +13,6 @@ const createMessageIo = async (senderId, receiverId, content) => {
       });
       conversation = await newConversation.save();
     }
-    console.log(conversation)
   } catch (err) {
     console.error(err);
     return;
@@ -35,7 +34,6 @@ const createMessageIo = async (senderId, receiverId, content) => {
 
 const getConversationMessages = async (req, res) => {
   try {
-    console.log("user : ", req.user.id)
     const messages = await db.Message.find({
       conversationId: req.params.conversationID,
     }).populate('sender', 'name').populate('receiver', 'name');
@@ -55,7 +53,6 @@ const getConversationMessagesusingID = async (req, res) => {
   const senderId = req.user.id;
 
   try {
-    console.log()
     const conversation = await db.Conversation.findOne({
       members: { $all: [senderId, receiverId] }
     }).exec();
@@ -65,7 +62,6 @@ const getConversationMessagesusingID = async (req, res) => {
     }
 
     const messages = await db.Message.find({ conversationId: conversation._id }).exec();
-    console.log("Messages : ", messages)
     res.status(200).json({ status: true, data: messages });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });

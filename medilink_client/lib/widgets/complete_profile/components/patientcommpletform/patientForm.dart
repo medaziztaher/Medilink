@@ -9,7 +9,6 @@ import '../../../../utils/size_config.dart';
 import '../../complete_profile_controller.dart';
 import '../profile_img.dart';
 
-
 class PatienForm extends StatelessWidget {
   const PatienForm({Key? key}) : super(key: key);
 
@@ -28,48 +27,49 @@ class PatienForm extends StatelessWidget {
                 Text("kcomplet".tr, style: headingStyle),
                 SizedBox(height: SizeConfig.screenHeight * 0.02),
                 ProfilePic(),
+                SizedBox(height: SizeConfig.screenHeight * 0.02),
                 GetBuilder<CompleteProfileController>(
                     init: CompleteProfileController(),
                     builder: (controller) {
                       return Form(
-                          key: controller.formKeyCompleteProfile,
-                          child: Column(
-                            children: [
-                              buildGenderFormField(controller),
-                              SizedBox(
-                                  height: getProportionateScreenHeight(15)),
-                              buildAddressFormField(controller),
-                              SizedBox(
-                                  height: getProportionateScreenHeight(15)),
-                              buildPhoneNumberFormField(controller),
-                              SizedBox(
-                                  height: getProportionateScreenHeight(15)),
-                              buildbirthdateField(controller),
-                              SizedBox(
-                                  height: getProportionateScreenHeight(15)),
-                              buildTypeFormField(controller),
-                              SizedBox(
-                                  height: getProportionateScreenHeight(10)),
-                              Visibility(
-                                  visible: controller.etatcivil != 'Single',
-                                  child: buildnemberdenfant(controller)),
-                              FormError(errors: controller.errors),
-                              SizedBox(
-                                  height: getProportionateScreenHeight(40)),
-                              DefaultButton(
-                                text: "Continue",
-                                press: () {
-                                  controller.completeProfile();
-                                },
-                              ),
-                            ],
-                          ));
+                        key: controller.formKeyCompleteProfile,
+                        child: Column(
+                          children: [
+                            buildGenderFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            buildAddressFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            buildPhoneNumberFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            buildbirthdateField(context, controller),
+                            SizedBox(height: getProportionateScreenHeight(15)),
+                            buildTypeFormField(controller),
+                            SizedBox(height: getProportionateScreenHeight(10)),
+                            Visibility(
+                                visible: controller.etatcivil != 'Single',
+                                child: buildnemberdenfant(controller)),
+                            SizedBox(height: getProportionateScreenHeight(10)),
+
+                            FormError(errors: controller.errors),
+                            SizedBox(height: getProportionateScreenHeight(40)),
+                            Obx(() {
+                              if (controller.isLoading.value == false) {
+                                return DefaultButton(
+                                  text: "kbutton1".tr,
+                                  press: () async {
+                                    controller.completeProfile();
+                                  },
+                                );
+                              } else {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                            }),
+                            SizedBox(height: getProportionateScreenHeight(20)),
+                          ],
+                        ),
+                      );
                     }),
-                Text(
-                  "kconditions".tr,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
               ],
             ),
           ),
@@ -131,35 +131,6 @@ class PatienForm extends StatelessWidget {
     );
   }
 
-  TextFormField buildbirthdateField(CompleteProfileController controller) {
-    return TextFormField(
-      onSaved: (newValue) => controller.dateofbirthController.text = newValue!,
-      onChanged: (value) => controller.onChangedbirthdate(value),
-      validator: (value) => controller.validatebirthdate(value),
-      controller: controller.dateofbirthController,
-      readOnly: true,
-      onTap: () async {
-        final DateTime? picked = await showDatePicker(
-          context: Get.overlayContext!,
-          initialDate: DateTime.now(),
-          firstDate: DateTime(1900),
-          lastDate: DateTime.now(),
-        );
-
-        if (picked != null) {
-          final formattedDate = DateFormat('dd/MM/yyyy').format(picked);
-          controller.selectedDate.value = formattedDate;
-          controller.dateofbirthController.text = formattedDate;
-        }
-      },
-      decoration: InputDecoration(
-        labelText: "kbirthdate".tr,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: Icon(Icons.calendar_month),
-      ),
-    );
-  }
-
   DropdownButtonFormField<String> buildTypeFormField(
       CompleteProfileController controller) {
     final List<String> typeValues = [
@@ -203,6 +174,39 @@ class PatienForm extends StatelessWidget {
         labelText: "Nembre d'enfant",
         floatingLabelBehavior: FloatingLabelBehavior.always,
       ),
+    );
+  }
+
+  TextFormField buildbirthdateField(
+      BuildContext context, CompleteProfileController controller) {
+    return TextFormField(
+      controller: controller.dateofbirthController,
+      readOnly: true,
+      onTap: () async {
+        final DateTime? selectedDate = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now(),
+          firstDate: DateTime(1900),
+          lastDate: DateTime(2100),
+        );
+
+        if (selectedDate != null) {
+          final DateFormat formatter = DateFormat('yyyy-MM-dd');
+          final String formattedDate = formatter.format(selectedDate);
+          controller.dateofbirthController.text = formattedDate;
+        }
+      },
+      decoration: InputDecoration(
+        labelText: "kbirthdate".tr,
+        hintText: "kbirthdatehint".tr,
+        border: OutlineInputBorder(),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter the date';
+        }
+        return null;
+      },
     );
   }
 }

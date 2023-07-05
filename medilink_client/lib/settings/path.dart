@@ -3,6 +3,7 @@ import '../utils/global.dart';
 
 const String login = "$url/api/auth/login";
 const String signup = "$url/api/auth/signup";
+const String auth = "$url/api/auth";
 //imgs asset paths
 const String profilePicPath = "$url/assets/profile-pictures";
 const String buildingpicsPath = "$url/assets/building-pictures";
@@ -28,7 +29,8 @@ const String profilePath = "$url/api/user/profile";
 //patient Paths
 const String careProviderspath = "$url/api/user/patient/healthcare-providers";
 const String patientPath = "$url/api/user/patient";
-
+//provider paths
+const String providerPath = "$url/api/user/healthcareProvider";
 //image url path
 const String userpicPath = "$url/api/files/profile-picture";
 const String buildpicPath = "$url/api/files/building-picture";
@@ -91,3 +93,9 @@ const String disesePath = "$url/api/disease";
 const String allergysPath = "$url/api/allergys";
 
 const String surgeriesPaths = "$url/api/surgeries";
+
+//payment path :
+const String paymentPath = "$url/api/payment/create";
+
+//apointment path
+const String appointmentPath = "$url/api/appointment";

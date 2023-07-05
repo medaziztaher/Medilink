@@ -24,7 +24,7 @@ class Feedback {
   factory Feedback.fromJson(Map<String, dynamic> json) {
     List<FeedbackFile> files = json['files'] != null
         ? (json['files'] as List<dynamic>).map((item) {
-            String id = item['id'] as String;
+            String id = item['_id'] as String;
             String url = "$feedbacksPath/${item['url']}";
             ;
             return FeedbackFile(id: id, url: url);

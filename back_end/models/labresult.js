@@ -8,7 +8,6 @@ const labresultSchema = new mongoose.Schema({
   date: { type: Date, required: false },
   reason: { type: String, required: false },
   files: [{
-    id: String,
     url: String
   }],
   sharedwith: [{ type: String, required: false },]

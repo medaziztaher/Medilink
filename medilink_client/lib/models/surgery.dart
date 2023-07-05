@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 import '../settings/path.dart';
 
 class Surgerie {
@@ -5,10 +7,10 @@ class Surgerie {
   String? patient;
   String? provider;
   String? type;
-  DateTime? date;
+  String? date;
   String? description;
   String? complications;
-  List<SurgeryFiles>? files;
+  List<String>? files;
 
   Surgerie({
     this.id,
@@ -22,35 +24,25 @@ class Surgerie {
   });
 
   factory Surgerie.fromJson(Map<String, dynamic> json) {
-    List<SurgeryFiles> files = json['files'] != null
-        ? (json['files'] as List<dynamic>)
-            .map((item) => SurgeryFiles(
-                type: item['type'] as String?,
-                id: item['id'] as String?,
-                url: "$surgeriePath/${item['url']}"))
-            .toList()
+    List<String>? files = json['files'] != null
+        ? (json['files'] as List<dynamic>).map((item) {
+            String url = "$surgeriePath/${item['url']}";
+            return url;
+          }).toList()
         : [];
-
+    String? formattedDate;
+    if (json['date'] != null) {
+      DateTime date = DateTime.parse(json['date']);
+      formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    }
     return Surgerie(
         id: json['_id'] as String?,
         patient: json['patient'] as String?,
         provider: json['provider'] as String?,
         type: json['type'] as String?,
-        date: json['date'] != null ? DateTime.parse(json['date']) : null,
+        date: formattedDate,
         description: json['description'] as String?,
         complications: json['complications'] as String?,
         files: files);
   }
-}
-
-class SurgeryFiles {
-  String? type;
-  String? id;
-  String? url;
-
-  SurgeryFiles({
-    this.type,
-    this.id,
-    this.url,
-  });
 }
